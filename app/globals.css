@@ -140,7 +140,17 @@ h1 {
 .corpus-stat strong { color: var(--ink); }
 .corpus-stat i { display: inline-block; width: 3px; height: 3px; margin: 0 8px 2px; border-radius: 50%; background: var(--muted); }
 
-.examples { margin-top: 54px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.model-callout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr); gap: 34px; margin-top: 54px; padding: 27px; border: 1px solid var(--ink); background: var(--panel); }
+.model-callout-kicker { margin: 0 0 10px; color: var(--accent); font: 700 9px var(--mono); letter-spacing: .14em; }
+.model-callout h2 { max-width: 470px; margin: 0 0 13px; font-size: 20px; line-height: 1.2; letter-spacing: -.025em; }
+.model-callout p:not(.model-callout-kicker) { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.model-callout p code { color: var(--ink); font: 11px var(--mono); }
+.model-callout a { font: 700 9px var(--mono); letter-spacing: .1em; text-underline-offset: 3px; }
+.example-prompt { display: grid; align-content: start; gap: 11px; padding: 18px; border: 1px solid var(--line); background: var(--ink); color: var(--paper); }
+.example-prompt span { color: #a7a99f; font: 8px var(--mono); letter-spacing: .14em; }
+.example-prompt code { font: 11px/1.65 var(--mono); }
+
+.examples { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .examples > span { margin-right: 5px; color: var(--muted); font: 9px var(--mono); letter-spacing: .15em; }
 .examples button { padding: 7px 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); font: 11px var(--mono); cursor: pointer; }
 .examples button:hover { border-color: var(--ink); color: var(--ink); background: var(--panel); }
@@ -190,6 +200,7 @@ footer div:last-child { display: flex; gap: 14px; }
   .search-box button span { font-size: 15px; }
   .filters { gap: 15px; flex-wrap: wrap; }
   .corpus-stat { width: 100%; margin-left: 0; }
+  .model-callout { grid-template-columns: 1fr; gap: 22px; margin-top: 42px; padding: 21px; }
   .results-meta { align-items: flex-start; gap: 12px; flex-direction: column; padding: 15px 0; }
   .result-list > li { grid-template-columns: 34px 1fr; }
   .result-list h2 { font-size: 18px; }

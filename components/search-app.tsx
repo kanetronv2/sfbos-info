@@ -150,6 +150,28 @@ export function SearchApp({
           </form>
 
           {!response && !loading && (
+            <aside className="model-callout" aria-labelledby="model-callout-title">
+              <div>
+                <p className="model-callout-kicker">DESIGNED FOR LLMs</p>
+                <h2 id="model-callout-title">Search here—or give the site to your preferred model.</h2>
+                <p>
+                  The index above is available for direct research. For deeper questions, the most
+                  effective way to use this archive is to give <code>https://sfbos.info</code> to any
+                  LLM. It can query the structured API, read Markdown, and follow official City sources.
+                </p>
+                <a href="/llms.txt">MODEL ACCESS GUIDE ↗</a>
+              </div>
+              <div className="example-prompt">
+                <span>EXAMPLE PROMPT</span>
+                <code>
+                  How many housing units has Connie Chan voted against? Use https://sfbos.info,
+                  distinguish procedural motions from final votes, and cite the official SF government documents.
+                </code>
+              </div>
+            </aside>
+          )}
+
+          {!response && !loading && (
             <div className="examples">
               <span>TRY</span>
               {examples.map((example) => (
