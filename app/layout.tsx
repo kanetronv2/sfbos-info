@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -61,21 +61,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="service-desc" type="application/yaml" href="/openapi.yaml" />
         <link rel="alternate" type="application/json" href="/api/mcp" title="MCP endpoint" />
       </head>
-      <body>
-        {children}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${googleAnalyticsId}');
-          `}
-        </Script>
-      </body>
+      <body>{children}</body>
+      <GoogleAnalytics gaId={googleAnalyticsId} />
     </html>
   );
 }

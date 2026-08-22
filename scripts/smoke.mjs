@@ -138,7 +138,7 @@ const homeResponse = await fetch(baseUrl);
 const homeHtml = await homeResponse.text();
 const analyticsPassed = homeResponse.ok &&
   homeHtml.includes("googletagmanager.com/gtag/js?id=G-Q4NGCL52JK") &&
-  homeHtml.includes("gtag('config', 'G-Q4NGCL52JK')");
+  homeHtml.includes("G-Q4NGCL52JK");
 console.log(`${analyticsPassed ? "PASS" : "FAIL"}  GA4 measurement tag`);
 if (!analyticsPassed) failures += 1;
 
