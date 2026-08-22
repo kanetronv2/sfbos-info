@@ -117,9 +117,26 @@ const mcpPassed = mcpResponse.ok && mcp.result?.tools?.some((tool) => tool.name 
 console.log(`${mcpPassed ? "PASS" : "FAIL"}  MCP tool discovery`);
 if (!mcpPassed) failures += 1;
 
+const transcriptResponse = await fetch(`${baseUrl}/documents/800/2021-10-26-minutes`);
+const transcriptHtml = await transcriptResponse.text();
+const transcriptLinksPassed = transcriptResponse.ok &&
+  transcriptHtml.includes('href="/supervisors/connie-chan"') &&
+  transcriptHtml.includes('class="supervisor-name-link"');
+console.log(`${transcriptLinksPassed ? "PASS" : "FAIL"}  transcript supervisor profile links`);
+if (!transcriptLinksPassed) failures += 1;
+
+const supervisorResponse = await fetch(`${baseUrl}/supervisors/connie-chan`);
+const supervisorHtml = await supervisorResponse.text();
+const contactPassed = supervisorResponse.ok &&
+  supervisorHtml.includes("ChanStaff@sfgov.org") &&
+  supervisorHtml.includes("(415) 554-7410") &&
+  supervisorHtml.includes("Official current roster");
+console.log(`${contactPassed ? "PASS" : "FAIL"}  current supervisor contact profile`);
+if (!contactPassed) failures += 1;
+
 if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 3} infrastructure smoke tests passed against ${baseUrl}.`);
 }

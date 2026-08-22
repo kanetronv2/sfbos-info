@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { documentMarkdownPath, documentSlug, documentUrl } from "@/lib/document-url";
 import { getDocumentEvidence } from "@/lib/documents";
+import { listSupervisorNameLinks } from "@/lib/supervisors";
 import { TargetDetails } from "@/components/target-details";
+import { SupervisorLinkedText } from "@/components/supervisor-linked-text";
 
 type EvidencePageProps = {
   params: Promise<{ id: string; slug?: string[] }>;
@@ -34,7 +36,10 @@ export async function generateMetadata({ params }: EvidencePageProps): Promise<M
 
 export default async function DocumentEvidencePage({ params }: EvidencePageProps) {
   const { id, slug } = await params;
-  const document = await getDocumentEvidence(id);
+  const [document, supervisorLinks] = await Promise.all([
+    getDocumentEvidence(id),
+    listSupervisorNameLinks(),
+  ]);
   if (!document) notFound();
 
   const expectedSlug = documentSlug(document.meetingDate, document.kind);
@@ -172,10 +177,10 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                             {rollCall.isFinal && <strong>LIKELY FINAL</strong>}
                           </div>
                           <p>{rollCall.action || "Action text unavailable."}</p>
-                          <VoteLine label="Ayes" names={rollCall.ayes} />
-                          <VoteLine label="Noes" names={rollCall.noes} />
-                          <VoteLine label="Absent" names={rollCall.absent} />
-                          <VoteLine label="Excused" names={rollCall.excused} />
+                          <VoteLine label="Ayes" names={rollCall.ayes} supervisors={supervisorLinks} />
+                          <VoteLine label="Noes" names={rollCall.noes} supervisors={supervisorLinks} />
+                          <VoteLine label="Absent" names={rollCall.absent} supervisors={supervisorLinks} />
+                          <VoteLine label="Excused" names={rollCall.excused} supervisors={supervisorLinks} />
                         </article>
                       ))}
                     </div>
@@ -213,7 +218,9 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                     <a href={document.officialUrl} target="_blank" rel="noreferrer">PDF ↗</a>
                   </div>
                 </header>
-                <div className="page-text">{page.content}</div>
+                <div className="page-text">
+                  <SupervisorLinkedText text={page.content} supervisors={supervisorLinks} />
+                </div>
               </section>
             ))}
           </article>
@@ -228,9 +235,22 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
   );
 }
 
-function VoteLine({ label, names }: { label: string; names: string[] }) {
+function VoteLine({
+  label,
+  names,
+  supervisors,
+}: {
+  label: string;
+  names: string[];
+  supervisors: Awaited<ReturnType<typeof listSupervisorNameLinks>>;
+}) {
   if (!names.length) return null;
-  return <p className="vote-line"><strong>{label}:</strong> {names.join(", ")}</p>;
+  return (
+    <p className="vote-line">
+      <strong>{label}:</strong>{" "}
+      <SupervisorLinkedText text={names.join(", ")} supervisors={supervisors} />
+    </p>
+  );
 }
 
 function pageRange(start: number, end: number) {

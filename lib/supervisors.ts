@@ -7,9 +7,24 @@ export interface SupervisorSummary {
   displayName: string;
   familyName: string;
   district: string | null;
+  active: boolean;
   firstRecordedDate: string | null;
   lastRecordedDate: string | null;
   recordedPositions: number;
+}
+
+export interface SupervisorNameLink {
+  slug: string;
+  displayName: string;
+  names: string[];
+}
+
+export interface SupervisorContact {
+  email: string;
+  phone: string;
+  address: string;
+  officialUrl: string;
+  sourceUrl: string;
 }
 
 export interface SupervisorVote {
@@ -34,6 +49,7 @@ export interface SupervisorProfile extends SupervisorSummary {
   counts: Record<"aye" | "no" | "absent" | "excused", number>;
   votes: SupervisorVote[];
   parserVersions: string[];
+  contact: SupervisorContact | null;
 }
 
 export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
@@ -41,7 +57,7 @@ export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
   const sql = neon(process.env.DATABASE_URL);
   const rows = await sql.query(
     `SELECT
-       s.slug, s.display_name, s.family_name, s.district,
+       s.slug, s.display_name, s.family_name, s.district, s.active,
        min(d.meeting_date)::text AS first_recorded_date,
        max(d.meeting_date)::text AS last_recorded_date,
        count(rcp.id)::int AS recorded_positions
@@ -59,17 +75,49 @@ export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
     displayName: row.display_name,
     familyName: row.family_name,
     district: row.district,
+    active: row.active,
     firstRecordedDate: row.first_recorded_date,
     lastRecordedDate: row.last_recorded_date,
     recordedPositions: row.recorded_positions,
   }));
 });
 
+export const listSupervisorNameLinks = cache(async (): Promise<SupervisorNameLink[]> => {
+  if (!process.env.DATABASE_URL) return [];
+  const sql = neon(process.env.DATABASE_URL);
+  const rows = await sql.query(
+    `SELECT s.slug, s.display_name, s.family_name,
+       coalesce(array_agg(a.alias ORDER BY length(a.alias) DESC)
+         FILTER (WHERE a.id IS NOT NULL), ARRAY[]::text[]) AS aliases
+     FROM supervisors s
+     LEFT JOIN supervisor_aliases a ON a.supervisor_id = s.id
+     GROUP BY s.id
+     ORDER BY s.family_name, s.display_name`,
+    [],
+  );
+  return rows.map((row) => {
+    const displayParts = String(row.display_name).split(/\s+/);
+    const shortDisplayName = displayParts.length > 2
+      ? `${displayParts[0]} ${displayParts.at(-1)}`
+      : row.display_name;
+    return {
+      slug: row.slug,
+      displayName: row.display_name,
+      names: [...new Set([
+        row.display_name,
+        shortDisplayName,
+        row.family_name,
+        ...(row.aliases as string[]),
+      ].filter(Boolean))],
+    };
+  });
+});
+
 export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfile | null> => {
   if (!process.env.DATABASE_URL || !/^[a-z0-9-]+$/.test(slug)) return null;
   const sql = neon(process.env.DATABASE_URL);
   const [supervisor] = await sql.query(
-    `SELECT id::text, slug, display_name, family_name, district
+    `SELECT id::text, slug, display_name, family_name, district, active, metadata
      FROM supervisors WHERE slug = $1`,
     [slug],
   );
@@ -130,12 +178,14 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
     displayName: supervisor.display_name,
     familyName: supervisor.family_name,
     district: supervisor.district,
+    active: supervisor.active,
     firstRecordedDate: firstDates[0] ?? null,
     lastRecordedDate: lastDates.at(-1) ?? null,
     recordedPositions: Object.values(counts).reduce((sum, value) => sum + value, 0),
     aliases: aliases.map((row) => ({ alias: row.alias, confidence: Number(row.confidence), source: row.source })),
     counts,
     parserVersions: parserRows.map((row) => row.parser_version),
+    contact: parseContact(supervisor.metadata?.contact),
     votes: voteRows.map((row) => ({
       id: row.id,
       position: row.position,
@@ -154,3 +204,11 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
     })),
   };
 });
+
+function parseContact(value: unknown): SupervisorContact | null {
+  if (!value || typeof value !== "object") return null;
+  const contact = value as Record<string, unknown>;
+  const fields = ["email", "phone", "address", "officialUrl", "sourceUrl"] as const;
+  if (!fields.every((field) => typeof contact[field] === "string" && contact[field])) return null;
+  return Object.fromEntries(fields.map((field) => [field, contact[field]])) as unknown as SupervisorContact;
+}

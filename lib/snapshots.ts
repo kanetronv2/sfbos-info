@@ -18,7 +18,8 @@ export async function getSnapshot(entity: SnapshotEntity, cursor: number, limit:
     supervisors: `SELECT s.id::text AS id, s.slug, s.display_name AS "displayName",
       s.family_name AS "familyName", s.district, s.term_start::text AS "termStart",
       s.term_end::text AS "termEnd", s.legistar_person_id::text AS "legistarPersonId",
-      s.active, coalesce(json_agg(json_build_object('alias', a.alias, 'confidence', a.confidence))
+      s.active, s.metadata->'contact' AS contact,
+      coalesce(json_agg(json_build_object('alias', a.alias, 'confidence', a.confidence))
         FILTER (WHERE a.id IS NOT NULL), '[]'::json) AS aliases
       FROM supervisors s LEFT JOIN supervisor_aliases a ON a.supervisor_id = s.id
       WHERE s.id > $1 GROUP BY s.id ORDER BY s.id LIMIT $2`,

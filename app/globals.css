@@ -318,6 +318,8 @@ footer div:last-child { display: flex; gap: 14px; }
 .document-page header div { display: flex; gap: 14px; }
 .document-page header a { color: var(--muted); font: 9px var(--mono); }
 .page-text { padding: 24px; overflow-wrap: anywhere; white-space: pre-wrap; color: #383a35; font: 11px/1.65 var(--mono); }
+.supervisor-name-link { color: var(--accent-dark); font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.supervisor-name-link:hover { color: var(--accent); }
 
 @media (max-width: 720px) {
   .evidence-main { width: calc(100% - 36px); padding: 38px 0 80px; }
@@ -346,6 +348,14 @@ footer div:last-child { display: flex; gap: 14px; }
 .position-grid span { color: var(--muted); font: 9px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
 .position-grid strong { font: 28px var(--mono); }
 .profile-provenance { margin: 0 0 65px; padding: 26px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.profile-contact { display: grid; grid-template-columns: minmax(180px, .7fr) 1.3fr; gap: 36px; margin: 0 0 42px; padding: 26px; border: 1px solid var(--ink); background: var(--panel); }
+.profile-contact .docs-kicker { margin: 0 0 8px; }
+.profile-contact h2 { margin: 0; font-size: 30px; letter-spacing: -.04em; }
+.profile-contact dl { display: grid; grid-template-columns: 110px 1fr; margin: 0; }
+.profile-contact dt, .profile-contact dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); font: 10px/1.5 var(--mono); }
+.profile-contact dt { color: var(--muted); text-transform: uppercase; }
+.profile-contact a { color: var(--accent-dark); text-underline-offset: 3px; }
+.profile-contact > p { margin: 0; color: var(--muted); font: 11px/1.65 var(--mono); }
 .profile-provenance h2 { margin: 0 0 20px; font-size: 21px; }
 .profile-provenance dl { display: grid; grid-template-columns: 120px 1fr; margin: 0; }
 .profile-provenance dt, .profile-provenance dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); font: 10px/1.5 var(--mono); }
@@ -374,6 +384,7 @@ footer div:last-child { display: flex; gap: 14px; }
 @media (max-width: 720px) {
   .entity-list li { grid-template-columns: 1fr; gap: 7px; }
   .position-grid { grid-template-columns: repeat(2, 1fr); }
+  .profile-contact { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
   .position-grid div:nth-child(2) { border-right: 0; }
   .position-grid div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .structured-provenance { margin-left: 5px; }

@@ -13,12 +13,24 @@ const skipLegistar = args.has("skip-legistar");
 const parserName = "sfbos-structured-records";
 const parserVersion = "2.0.0";
 const configHash = sha256(JSON.stringify({ fromYear, toYear, parserVersion }));
-const currentDistricts = new Map([
-  ["connie-chan", "1"], ["stephen-sherrill", "2"], ["danny-sauter", "3"],
-  ["alan-wong", "4"], ["bilal-mahmood", "5"], ["matt-dorsey", "6"],
-  ["myrna-melgar", "7"], ["rafael-mandelman", "8"], ["jackie-fielder", "9"],
-  ["shamann-walton", "10"], ["chyanne-chen", "11"],
+const supervisorRosterUrl = "https://sfbos.org/current-supervisors";
+const officeAddress = "1 Dr. Carlton B. Goodlett Place, City Hall";
+const fallbackContacts = new Map([
+  ["connie-chan", contact("1", "(415) 554-7410", "ChanStaff@sfgov.org", "/supervisor-chan-district-1")],
+  ["stephen-sherrill", contact("2", "(415) 554-7752", "SherrillStaff@sfgov.org", "/supervisor-sherrill-district-2")],
+  ["danny-sauter", contact("3", "(415) 554-7450", "SauterStaff@sfgov.org", "/supervisor-sauter-district-3")],
+  ["alan-wong", contact("4", "(415) 554-7960", "WongStaff@sfgov.org", "/supervisor-wong-district-4")],
+  ["bilal-mahmood", contact("5", "(415) 554-7630", "MahmoodStaff@sfgov.org", "/supervisor-mahmood-district-5")],
+  ["matt-dorsey", contact("6", "(415) 554-7970", "DorseyStaff@sfgov.org", "/supervisor-dorsey-district-6")],
+  ["myrna-melgar", contact("7", "(415) 554-6516", "MelgarStaff@sfgov.org", "/supervisor-melgar-district-7")],
+  ["rafael-mandelman", contact("8", "(415) 554-6968", "MandelmanStaff@sfgov.org", "/supervisor-mandelman-district-8")],
+  ["jackie-fielder", contact("9", "(415) 554-5144", "Jackie.Fielder@sfgov.org", "/supervisor-fielder-district-9")],
+  ["shamann-walton", contact("10", "(415) 554-7670", "Shamann.Walton@sfgov.org", "/supervisor-walton-district-10")],
+  ["chyanne-chen", contact("11", "(415) 554-6975", "ChenStaff@sfgov.org", "/supervisor-chen-district-11")],
 ]);
+const fetchedContacts = await fetchCurrentSupervisorContacts();
+const currentContacts = fetchedContacts.size ? fetchedContacts : fallbackContacts;
+const currentDistricts = new Map([...currentContacts].map(([slug, value]) => [slug, value.district]));
 const supervisors = [
   ["john-avalos", "John Avalos", "Avalos"], ["london-breed", "London Breed", "Breed"],
   ["vallie-brown", "Vallie Brown", "Brown"], ["david-campos", "David Campos", "Campos"],
@@ -42,6 +54,7 @@ const supervisors = [
   slug, name, family,
   district: currentDistricts.get(slug) ?? null,
   active: currentDistricts.has(slug),
+  contact: currentContacts.get(slug) ?? null,
   aliases: slug === "aaron-peskin" ? ["Peskn"] : [],
 }));
 
@@ -279,7 +292,10 @@ async function reconcileSupervisors() {
           OR supervisors.active IS DISTINCT FROM excluded.active
           OR supervisors.metadata IS DISTINCT FROM supervisors.metadata || excluded.metadata
        RETURNING id::text`,
-      [supervisor.slug, supervisor.name, supervisor.family, supervisor.district, supervisor.active, JSON.stringify({ source: "curated-name-reconciliation" })],
+      [supervisor.slug, supervisor.name, supervisor.family, supervisor.district, supervisor.active, JSON.stringify({
+        source: "curated-name-reconciliation",
+        ...(supervisor.contact ? { contact: supervisor.contact } : {}),
+      })],
     );
     if (!row) {
       [row] = await sql.query("SELECT id::text FROM supervisors WHERE slug = $1", [supervisor.slug]);
@@ -302,6 +318,50 @@ async function reconcileSupervisors() {
       );
     }
   }
+}
+
+function contact(district, phone, email, profilePath) {
+  return {
+    district,
+    phone,
+    email,
+    address: officeAddress,
+    officialUrl: new URL(profilePath, supervisorRosterUrl).href,
+    sourceUrl: supervisorRosterUrl,
+  };
+}
+
+async function fetchCurrentSupervisorContacts() {
+  try {
+    const response = await fetch(supervisorRosterUrl, { signal: AbortSignal.timeout(15_000) });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const html = await response.text();
+    const contacts = new Map();
+    for (const match of html.matchAll(/<td[^>]*class="bos_info"[^>]*>([\s\S]*?)<\/td>/gi)) {
+      const block = match[1];
+      const profile = block.match(/href="(\/supervisor-[^"]+-district-\d+)"[^>]*>([^<]+)<\/a>/i);
+      const district = block.match(/District\s+(\d+)/i)?.[1];
+      const phone = block.match(/(\(415\)\s*554-\d{4})\s*-\s*Voice/i)?.[1];
+      const email = block.match(/(?:mailto:)?([a-z0-9._%+-]+@sfgov\.org)/i)?.[1];
+      if (!profile || !district || !phone || !email) continue;
+      const displayName = decodeHtml(profile[2]).trim();
+      contacts.set(slugify(displayName), contact(district, phone, email, profile[1]));
+    }
+    if (contacts.size < 11) throw new Error(`parsed only ${contacts.size} contacts`);
+    return contacts;
+  } catch (error) {
+    console.warn(`Could not refresh ${supervisorRosterUrl}; using curated contact fallback.`, error);
+    return new Map();
+  }
+}
+
+function slugify(value) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function decodeHtml(value) {
+  return value.replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&#039;/g, "'").replace(/&quot;/g, '"');
 }
 
 async function reconcilePositions() {

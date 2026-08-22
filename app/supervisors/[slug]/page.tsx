@@ -11,8 +11,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const profile = await getSupervisor((await params).slug);
   if (!profile) return { title: "Supervisor not found" };
   return {
-    title: `${profile.displayName} recorded votes`,
-    description: `Page-addressable evidence for recorded San Francisco Board of Supervisors roll-call positions attributed to ${profile.displayName}.`,
+    title: `${profile.displayName} supervisor profile and recorded votes`,
+    description: `${profile.active ? "Current office contact information and " : "Identity information and "}page-addressable evidence for recorded San Francisco Board of Supervisors roll-call positions attributed to ${profile.displayName}.`,
     alternates: { canonical: `/supervisors/${profile.slug}` },
   };
 }
@@ -21,11 +21,27 @@ export default async function SupervisorPage({ params }: Props) {
   const profile = await getSupervisor((await params).slug);
   if (!profile) notFound();
   const siteUrl = getSiteUrl();
+  const person = {
+    "@type": "Person",
+    name: profile.displayName,
+    ...(profile.active ? { jobTitle: `District ${profile.district} Supervisor` } : {}),
+    ...(profile.contact ? {
+      email: profile.contact.email,
+      telephone: profile.contact.phone,
+      url: profile.contact.officialUrl,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: profile.contact.address,
+        addressLocality: "San Francisco",
+        addressRegion: "CA",
+      },
+    } : {}),
+  };
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
     url: `${siteUrl}/supervisors/${profile.slug}`,
-    mainEntity: { "@type": "Person", name: profile.displayName },
+    mainEntity: person,
     description: "A data profile of recorded roll-call positions extracted from official public minutes.",
   };
   return (
@@ -37,13 +53,34 @@ export default async function SupervisorPage({ params }: Props) {
       <main className="evidence-main supervisor-profile">
         <nav className="evidence-breadcrumb"><Link href="/supervisors">Supervisors</Link><span>/</span><span>{profile.displayName}</span></nav>
         <header className="evidence-header">
-          <p className="docs-kicker">RECORDED ROLL-CALL EVIDENCE</p>
+          <p className="docs-kicker">SUPERVISOR PROFILE AND RECORDED ROLL-CALL EVIDENCE</p>
           <h1>{profile.displayName}</h1>
           <p className="evidence-notice">
             These are recorded positions on specific actions. A No is not automatically opposition to
             a project, and an Aye is not automatically support. Read the action and cited minutes.
           </p>
         </header>
+        <section className="profile-contact" aria-labelledby="contact-title">
+          <div>
+            <p className="docs-kicker">{profile.active ? "CURRENT CITY OFFICE" : "FORMER SUPERVISOR"}</p>
+            <h2 id="contact-title">Contact</h2>
+          </div>
+          {profile.contact ? (
+            <dl>
+              <dt>District</dt><dd>{profile.district}</dd>
+              <dt>Email</dt><dd><a href={`mailto:${profile.contact.email}`}>{profile.contact.email}</a></dd>
+              <dt>Phone</dt><dd><a href={`tel:${profile.contact.phone.replace(/[^+\d]/g, "")}`}>{profile.contact.phone}</a></dd>
+              <dt>Office</dt><dd>{profile.contact.address}<br />San Francisco, CA 94102</dd>
+              <dt>Official page</dt><dd><a href={profile.contact.officialUrl} target="_blank" rel="noreferrer">Board of Supervisors profile ↗</a></dd>
+              <dt>Verified source</dt><dd><a href={profile.contact.sourceUrl} target="_blank" rel="noreferrer">Official current roster ↗</a></dd>
+            </dl>
+          ) : (
+            <p>
+              {profile.displayName} is not a sitting supervisor, so no current Board office contact is listed.
+              {" "}<a href="https://sfbos.org/former-supervisors" target="_blank" rel="noreferrer">Official former supervisors directory ↗</a>
+            </p>
+          )}
+        </section>
         <section className="position-grid" aria-label="Recorded position counts">
           {Object.entries(profile.counts).map(([position, count]) => (
             <div key={position}><span>{position}</span><strong>{count.toLocaleString()}</strong></div>
