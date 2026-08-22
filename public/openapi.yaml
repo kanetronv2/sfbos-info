@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: SF BOS Search API
-  version: 1.0.0
-  description: Page-level full-text search over San Francisco Board of Supervisors agendas and minutes.
+  version: 1.1.0
+  description: Page-level and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
 servers:
   - url: https://sfbos.info
 paths:
@@ -36,6 +36,45 @@ paths:
                 $ref: "#/components/schemas/SearchResponse"
             text/markdown:
               schema: { type: string }
+  /api/items:
+    get:
+      operationId: searchLegislativeItems
+      summary: Search legislative files and their recorded roll calls
+      description: Searches complete legislative-item blocks and related files for the same matter. Roll calls preserve the action immediately preceding the vote.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 300 }
+        - name: voter
+          in: query
+          description: Recorded supervisor surname or full name.
+          schema: { type: string, maxLength: 80 }
+        - name: position
+          in: query
+          description: Recorded position. Requires voter. This is not an inferred stance on the underlying matter.
+          schema: { type: string, enum: [aye, no, absent, excused] }
+        - name: from
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2012 }
+        - name: to
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2026 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, md] }
+      responses:
+        "200":
+          description: Matching legislative items with action-aware roll calls.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSearchResponse"
+            text/markdown:
+              schema: { type: string }
 components:
   schemas:
     SearchResponse:
@@ -62,3 +101,40 @@ components:
               page: { type: integer }
               snippet: { type: string }
               score: { type: number }
+    RollCall:
+      type: object
+      required: [sequence, action, ayes, noes, absent, excused]
+      properties:
+        sequence: { type: integer }
+        action: { type: string }
+        ayes: { type: array, items: { type: string } }
+        noes: { type: array, items: { type: string } }
+        absent: { type: array, items: { type: string } }
+        excused: { type: array, items: { type: string } }
+    ItemSearchResponse:
+      type: object
+      required: [query, filters, total, returned, results]
+      properties:
+        query: { type: string }
+        filters: { type: object }
+        total: { type: integer }
+        returned: { type: integer }
+        results:
+          type: array
+          items:
+            type: object
+            required: [id, meetingDate, year, fileNumber, title, officialUrl, startPage, endPage, snippet, score, rollCalls]
+            properties:
+              id: { type: string }
+              meetingDate: { type: string, format: date }
+              year: { type: integer }
+              fileNumber: { type: string }
+              title: { type: string }
+              officialUrl: { type: string, format: uri }
+              startPage: { type: integer }
+              endPage: { type: integer }
+              snippet: { type: string }
+              score: { type: number }
+              rollCalls:
+                type: array
+                items: { $ref: "#/components/schemas/RollCall" }

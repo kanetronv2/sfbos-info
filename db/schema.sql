@@ -42,3 +42,52 @@ COMMENT ON TABLE documents IS
 
 COMMENT ON TABLE pages IS
   'Page-level text extracted from documents with pdftotext.';
+
+CREATE TABLE IF NOT EXISTS legislative_items (
+  id bigserial PRIMARY KEY,
+  document_id bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  ordinal integer NOT NULL CHECK (ordinal > 0),
+  file_number text NOT NULL,
+  title text NOT NULL,
+  content text NOT NULL,
+  matter text NOT NULL,
+  context text NOT NULL,
+  start_page integer NOT NULL CHECK (start_page > 0),
+  end_page integer NOT NULL CHECK (end_page >= start_page),
+  search_vector tsvector GENERATED ALWAYS AS (
+    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(content, '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(context, '')), 'C')
+  ) STORED,
+  UNIQUE (document_id, ordinal)
+);
+
+CREATE INDEX IF NOT EXISTS legislative_items_search_vector_idx
+  ON legislative_items USING gin (search_vector);
+
+CREATE INDEX IF NOT EXISTS legislative_items_file_number_idx
+  ON legislative_items (file_number);
+
+CREATE INDEX IF NOT EXISTS legislative_items_document_id_idx
+  ON legislative_items (document_id);
+
+CREATE TABLE IF NOT EXISTS roll_calls (
+  id bigserial PRIMARY KEY,
+  item_id bigint NOT NULL REFERENCES legislative_items(id) ON DELETE CASCADE,
+  sequence integer NOT NULL CHECK (sequence > 0),
+  action text NOT NULL,
+  ayes text[] NOT NULL DEFAULT '{}',
+  noes text[] NOT NULL DEFAULT '{}',
+  absent text[] NOT NULL DEFAULT '{}',
+  excused text[] NOT NULL DEFAULT '{}',
+  UNIQUE (item_id, sequence)
+);
+
+CREATE INDEX IF NOT EXISTS roll_calls_item_id_idx
+  ON roll_calls (item_id);
+
+COMMENT ON TABLE legislative_items IS
+  'Legislative file blocks parsed from official Board meeting minutes.';
+
+COMMENT ON TABLE roll_calls IS
+  'Recorded roll calls with the immediately preceding action text preserved for interpretation.';

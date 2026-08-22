@@ -29,6 +29,7 @@ Provision a Neon Postgres integration in Vercel and copy `.env.example` to `.env
 ```bash
 npm run db:migrate
 npm run db:ingest
+npm run db:items
 ```
 
 Both database commands load `.env.local` automatically.
@@ -45,20 +46,28 @@ The ingester uses `pdftotext`, indexes every non-empty PDF page, and records the
 npm run db:ingest -- --from-year 2018 --to-year 2018 --limit 10
 ```
 
+`npm run db:items` parses the indexed minutes into legislative-file blocks and action-aware roll
+calls. It reads from Postgres rather than the local PDFs, is resumable, and accepts the same year,
+limit, force, and dry-run options.
+
 ## API
 
 - `GET /api/search?q=affordable+housing`
 - `GET /api/search.md?q=housing+vote&year=2018`
+- `GET /api/items?q=dwelling+units&voter=Chan&position=no&from=2021&to=2026`
+- `GET /api/items.md?q=469+Stevenson&voter=Chan`
 - `GET /openapi.yaml`
 - `GET /llms.txt`
 
-The API supports `year`, `kind`, and `limit` filters and can return Markdown using `/api/search.md`, `?format=md`, or `Accept: text/markdown`.
+Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, `position`, `from`,
+`to`, and `limit`, and returns the action attached to every roll call. Both APIs can return Markdown
+using the `.md` route, `?format=md`, or `Accept: text/markdown`.
 
 ## Deploy on Vercel
 
 1. Import this GitHub repository into Vercel with the Next.js defaults.
 2. Add a Neon integration or set `DATABASE_URL` in the Vercel project.
 3. Set `NEXT_PUBLIC_SITE_URL` to the production origin.
-4. From a machine containing the downloaded corpus, run `npm run db:migrate` and `npm run db:ingest` against the production database.
+4. From a machine containing the downloaded corpus, run `npm run db:migrate`, `npm run db:ingest`, and `npm run db:items` against the production database.
 
 Pushes to the repository's production branch can then be used for automatic deployments.

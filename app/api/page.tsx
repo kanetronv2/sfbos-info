@@ -12,6 +12,9 @@ Accept: application/json`;
 const markdownExample = `GET /api/search.md?q=who+voted+against+housing&year=2018
 Accept: text/markdown`;
 
+const itemExample = `GET /api/items.md?q=%22dwelling+units%22+OR+%22residential+unit%22&voter=Chan&from=2021&to=2026
+Accept: text/markdown`;
+
 export default function ApiPage() {
   return (
     <div className="docs-shell">
@@ -23,8 +26,8 @@ export default function ApiPage() {
         <p className="docs-kicker">PUBLIC · READ-ONLY · CORS ENABLED</p>
         <h1>Search API</h1>
         <p className="docs-lede">
-          Page-level full-text search across Board of Supervisors agendas and minutes.
-          Responses always include a direct official-document URL.
+          Page search across agendas and minutes, plus action-aware legislative-item and
+          roll-call search for researching votes. Every response links to the official record.
         </p>
 
         <section>
@@ -36,6 +39,29 @@ export default function ApiPage() {
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
+        </section>
+
+        <section>
+          <h2><code>GET /api/items</code></h2>
+          <p>
+            Search complete legislative-file blocks from meeting minutes. Results preserve each
+            roll call and the action immediately before it, preventing an Aye or No from being
+            interpreted without its motion.
+          </p>
+          <div className="parameter-grid">
+            <code>q</code><p>Required. Searches the item and related files for the same matter.</p>
+            <code>voter</code><p>Optional. Recorded surname or full name; for example, <code>Chan</code>.</p>
+            <code>position</code><p>Optional. <code>aye</code>, <code>no</code>, <code>absent</code>, or <code>excused</code>. Requires <code>voter</code>.</p>
+            <code>from / to</code><p>Optional inclusive year range, 2012–2026.</p>
+            <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
+            <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
+          </div>
+          <pre><code>{itemExample}</code></pre>
+          <p>
+            Use <code>/api/items.md</code> for Markdown. A position is not automatically a stance:
+            an Aye on “disapprove” opposes the underlying project, while an Aye on “table
+            disapproval” supports it. The returned action text makes that distinction explicit.
+          </p>
         </section>
 
         <section>
