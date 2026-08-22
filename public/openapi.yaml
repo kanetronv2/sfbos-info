@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SF BOS Search API
-  version: 1.2.0
+  version: 1.3.0
   description: Page-level and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
 servers:
   - url: https://sfbos.info
@@ -133,13 +133,14 @@ components:
           type: array
           items:
             type: object
-            required: [id, meetingDate, year, kind, title, officialUrl, page, snippet, score]
+            required: [id, meetingDate, year, kind, title, transcriptUrl, officialUrl, page, snippet, score]
             properties:
               id: { type: string }
               meetingDate: { type: string, format: date }
               year: { type: integer }
               kind: { type: string, enum: [agenda, minutes] }
               title: { type: string }
+              transcriptUrl: { type: string, format: uri }
               officialUrl: { type: string, format: uri }
               page: { type: integer }
               snippet: { type: string }
@@ -169,7 +170,7 @@ components:
           type: array
           items:
             type: object
-            required: [id, meetingDate, year, fileNumber, matter, title, officialUrl, startPage, endPage, snippet, score, groupCount, extracted, rollCalls]
+            required: [id, meetingDate, year, fileNumber, matter, title, transcriptUrl, officialUrl, startPage, endPage, snippet, score, groupCount, extracted, rollCalls]
             properties:
               id: { type: string }
               meetingDate: { type: string, format: date }
@@ -177,6 +178,7 @@ components:
               fileNumber: { type: string }
               matter: { type: string }
               title: { type: string }
+              transcriptUrl: { type: string, format: uri }
               officialUrl: { type: string, format: uri }
               startPage: { type: integer }
               endPage: { type: integer }
@@ -215,13 +217,14 @@ components:
           type: array
           items:
             type: object
-            required: [id, meetingDate, year, speaker, statement, officialUrl, page, score]
+            required: [id, meetingDate, year, speaker, statement, transcriptUrl, officialUrl, page, score]
             properties:
               id: { type: string }
               meetingDate: { type: string, format: date }
               year: { type: integer }
               speaker: { type: string }
               statement: { type: string }
+              transcriptUrl: { type: string, format: uri }
               officialUrl: { type: string, format: uri }
               page: { type: integer }
               score: { type: number }

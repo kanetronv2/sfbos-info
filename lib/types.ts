@@ -6,6 +6,7 @@ export interface SearchResult {
   year: number;
   kind: DocumentKind;
   title: string;
+  transcriptUrl: string;
   officialUrl: string;
   page: number;
   snippet: string;

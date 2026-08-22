@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { extractItemFacts } from "./item-extraction";
+import { documentUrl } from "./document-url";
 import { expandQuery } from "./query-expansion";
 import type {
   ActionType,
@@ -35,6 +36,7 @@ interface DatabaseRollCall {
 
 interface DatabaseRow {
   item_id: string;
+  document_id: string;
   meeting_date: string;
   year: number;
   file_number: string;
@@ -120,6 +122,7 @@ export async function searchLegislativeItems(
       WITH candidates AS (
         SELECT
           i.id,
+          i.document_id,
           d.meeting_date,
           d.year,
           i.file_number,
@@ -157,6 +160,7 @@ export async function searchLegislativeItems(
       )
       SELECT
         matched.id::text AS item_id,
+        matched.document_id::text,
         matched.meeting_date::text,
         matched.year,
         matched.file_number,
@@ -200,7 +204,7 @@ export async function searchLegislativeItems(
       FROM matched
       LEFT JOIN roll_calls rc ON rc.item_id = matched.id
       GROUP BY
-        matched.id, matched.meeting_date, matched.year, matched.file_number, matched.matter,
+        matched.id, matched.document_id, matched.meeting_date, matched.year, matched.file_number, matched.matter,
         matched.title, matched.content, matched.official_url, matched.start_page, matched.end_page,
         matched.snippet, matched.score, matched.group_count, matched.total_count
       ORDER BY matched.score DESC, matched.meeting_date DESC, matched.id
@@ -215,6 +219,7 @@ export async function searchLegislativeItems(
     fileNumber: row.file_number,
     matter: row.matter,
     title: row.title,
+    transcriptUrl: documentUrl(row.document_id, row.meeting_date, "minutes", row.start_page),
     officialUrl: row.official_url,
     startPage: row.start_page,
     endPage: row.end_page,

@@ -4,7 +4,12 @@ const cases = [
   {
     name: "469 Stevenson vote",
     path: "/api/items?q=469+Stevenson&voter=Chan&from=2021&to=2021&groupBy=file",
-    test: (body) => body.results.some((item) => item.fileNumber === "210920"),
+    test: (body) => body.results.some((item) =>
+      item.fileNumber === "210920" &&
+      item.transcriptUrl.includes("/documents/") &&
+      item.transcriptUrl.includes("#page-") &&
+      item.officialUrl.startsWith("https://")
+    ),
   },
   {
     name: "killer robots alias",

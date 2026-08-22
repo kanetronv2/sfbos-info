@@ -108,11 +108,12 @@ function toMarkdown(response: SearchResponse) {
 
   response.results.forEach((result, index) => {
     lines.push(
-      `## ${index + 1}. [${result.title}](${result.officialUrl})`,
+      `## ${index + 1}. [${result.title}](${result.transcriptUrl})`,
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Document: ${result.kind}`,
       `- PDF page: ${result.page}`,
+      `- [Official source PDF](${result.officialUrl})`,
       "",
       `> ${result.snippet.replace(/\n/g, " ")}`,
       "",
@@ -121,7 +122,7 @@ function toMarkdown(response: SearchResponse) {
 
   lines.push(
     "---",
-    "Results are transcript matches, not an answer by themselves. Verify conclusions, votes, and names against the linked official PDF.",
+    "Results are extracted-text matches, not an answer by themselves. Verify conclusions, votes, and names against the linked official PDF.",
     "",
   );
   return lines.join("\n");

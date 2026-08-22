@@ -206,7 +206,7 @@ function documentTitle(kind, meetingDate) {
     timeZone: "UTC",
   }).format(new Date(`${meetingDate}T00:00:00Z`));
   const label = kind === "agenda" ? "Agenda" : "Minutes";
-  return `Board of Supervisors ${label} — ${date}`;
+  return `Board of Supervisors ${label}: ${date}`;
 }
 
 function parseArguments(args) {

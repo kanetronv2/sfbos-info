@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { documentUrl } from "./document-url";
 import { expandQuery } from "./query-expansion";
 import type { PublicCommentResponse, PublicCommentResult } from "./comment-types";
 
@@ -12,6 +13,7 @@ interface CommentSearchOptions {
 
 interface DatabaseRow {
   id: string;
+  document_id: string;
   meeting_date: string;
   year: number;
   speaker: string;
@@ -52,6 +54,7 @@ export async function searchPublicComments(options: CommentSearchOptions): Promi
     `
       SELECT
         c.id::text,
+        d.id::text AS document_id,
         d.meeting_date::text,
         d.year,
         c.speaker,
@@ -75,6 +78,7 @@ export async function searchPublicComments(options: CommentSearchOptions): Promi
     year: row.year,
     speaker: row.speaker,
     statement: normalizeWhitespace(row.content),
+    transcriptUrl: documentUrl(row.document_id, row.meeting_date, "minutes", row.page_number),
     officialUrl: row.official_url,
     page: row.page_number,
     score: Number(row.score),

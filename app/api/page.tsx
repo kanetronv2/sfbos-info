@@ -42,6 +42,10 @@ export default function ApiPage() {
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
+          <p>
+            Every result includes a canonical <code>transcriptUrl</code> with a page anchor and a
+            separate <code>officialUrl</code> for the authoritative City PDF.
+          </p>
         </section>
 
         <section>
@@ -101,7 +105,7 @@ export default function ApiPage() {
         <section>
           <h2>Discovery</h2>
           <ul>
-            <li><a href="/documents">/documents — complete PDF archive</a></li>
+            <li><Link href="/documents">/documents: complete PDF archive</Link></li>
             <li><a href="/llms.txt">/llms.txt</a></li>
             <li><a href="/openapi.yaml">/openapi.yaml</a></li>
             <li><a href="/index.md">/index.md</a></li>

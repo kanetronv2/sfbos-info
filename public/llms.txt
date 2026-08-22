@@ -23,6 +23,9 @@ the action immediately preceding each vote. Never treat Aye as support or No as 
 reading that action. An Aye on a motion to disapprove opposes the underlying project; an Aye on a
 motion to table that disapproval supports it.
 
+Each result provides both `transcriptUrl` and `officialUrl`. Use `transcriptUrl` for page-addressable
+HTML evidence and use `officialUrl` to verify against the authoritative City PDF.
+
 Item responses also identify action types and likely final actions, and extract monetary amounts,
 housing-unit counts, and agreement parties. These are deterministic aids; verify them against the
 returned title and official minutes before calculating totals.
@@ -45,7 +48,9 @@ Use page search for broad discovery and passages outside legislative-file blocks
 Example:
 https://sfbos.info/api/search.md?q=housing+vote&year=2018&kind=minutes&limit=50
 
-Important: results are evidence, not a synthesized answer. Read the relevant result text, follow official PDF links, distinguish proposals from final actions, avoid double-counting repeated votes or findings, and cite the official document when answering.
+Important: results are evidence, not a synthesized answer. Read the relevant extracted-text page,
+follow the official PDF link, distinguish proposals from final actions, avoid double-counting repeated
+votes or findings, and cite both the page-addressable evidence and official document when answering.
 
 Documentation:
 - https://sfbos.info/documents (complete PDF archive)

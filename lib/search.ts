@@ -1,5 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { previewResults } from "./demo-data";
+import { documentUrl } from "./document-url";
+import { displayDocumentTitle } from "./document-title";
 import { expandQuery } from "./query-expansion";
 import type { DocumentKind, SearchResponse, SearchResult } from "./types";
 
@@ -81,7 +83,8 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     meetingDate: row.meeting_date,
     year: row.year,
     kind: row.kind,
-    title: row.title,
+    title: displayDocumentTitle(row.title),
+    transcriptUrl: documentUrl(row.document_id, row.meeting_date, row.kind, row.page_number),
     officialUrl: row.official_url,
     page: row.page_number,
     snippet: normalizeWhitespace(row.snippet),

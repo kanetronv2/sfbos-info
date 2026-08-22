@@ -1,6 +1,6 @@
 # sfbos.info
 
-Minimal full-text search for San Francisco Board of Supervisors agendas and minutes, with official source links and JSON/Markdown APIs.
+Minimal full-text search for San Francisco Board of Supervisors agendas and minutes, with indexable HTML text views, official source links, and JSON/Markdown APIs.
 
 ## Local development
 
@@ -67,6 +67,9 @@ Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, 
 counts, and agreement parties. Comment search supports `speaker`, `from`, `to`, and `limit`. All APIs
 expand common civic-language aliases and can return Markdown using the `.md` route, `?format=md`, or
 `Accept: text/markdown`.
+
+Every indexed PDF also has a canonical HTML evidence page at `/documents/{id}/{date}-{kind}`. Search
+results link to the matching `#page-{number}` anchor and retain the official PDF as a separate source.
 
 ## Deploy on Vercel
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listDocuments } from "@/lib/documents";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "PDF archive",
@@ -39,8 +39,8 @@ export default async function DocumentsPage() {
         <p className="docs-kicker">OFFICIAL SOURCE LINKS · COMPLETE INDEX</p>
         <h1>PDF archive.</h1>
         <p className="archive-lede">
-          Every agenda and minutes PDF in the index, ordered newest first. Links resolve directly
-          to the official San Francisco government document.
+          Every agenda and minutes PDF in the index, ordered newest first. Each HTML text view links
+          back to the authoritative San Francisco government document.
         </p>
 
         <div className="archive-stats" aria-label="Archive statistics">
@@ -67,10 +67,13 @@ export default async function DocumentsPage() {
                     <li key={document.id}>
                       <time dateTime={document.meetingDate}>{formatDate(document.meetingDate)}</time>
                       <span className={`document-kind ${document.kind}`}>{document.kind}</span>
-                      <a href={document.officialUrl} target="_blank" rel="noreferrer">
-                        {document.title}<span aria-hidden="true"> ↗</span>
+                      <Link href={document.transcriptPath}>
+                        {document.title}
+                      </Link>
+                      <span className="page-count">{document.pageCount || "N/A"} pp.</span>
+                      <a className="archive-source-link" href={document.officialUrl} target="_blank" rel="noreferrer">
+                        PDF ↗
                       </a>
-                      <span className="page-count">{document.pageCount || "—"} pp.</span>
                     </li>
                   ))}
                 </ol>

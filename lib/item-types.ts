@@ -44,6 +44,7 @@ export interface LegislativeItemResult {
   fileNumber: string;
   matter: string;
   title: string;
+  transcriptUrl: string;
   officialUrl: string;
   startPage: number;
   endPage: number;

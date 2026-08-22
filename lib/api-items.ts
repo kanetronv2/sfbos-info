@@ -139,10 +139,11 @@ function toMarkdown(response: LegislativeItemResponse) {
 
   for (const [index, result] of response.results.entries()) {
     lines.push(
-      `## ${index + 1}. File ${result.fileNumber}: [${result.title}](${result.officialUrl})`,
+      `## ${index + 1}. File ${result.fileNumber}: [${result.title}](${result.transcriptUrl})`,
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Official PDF pages: ${pageRange(result.startPage, result.endPage)}`,
+      `- [Official source PDF](${result.officialUrl})`,
       result.groupCount > 1 ? `- Grouped matching records: ${result.groupCount}` : "",
       "",
       `> ${result.snippet}`,

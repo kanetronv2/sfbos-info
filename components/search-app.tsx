@@ -103,10 +103,6 @@ export function SearchApp({
         <section className="search-intro" aria-labelledby="page-title">
           <div className="eyebrow"><span className="live-dot" /> PUBLIC RECORD SEARCH</div>
           <h1 id="page-title">Search the San Francisco<br />Board of Supervisors.</h1>
-          <p className="lede">
-            Full-text search across agendas and minutes. Every result resolves to the
-            official City source document.
-          </p>
 
           <form className="search-form" onSubmit={submit}>
             <div className="search-box">
@@ -144,7 +140,7 @@ export function SearchApp({
                 </select>
               </label>
               <div className="corpus-stat" aria-label="Corpus statistics">
-                <strong>1,149</strong> PDFs <i /> <strong>2012—2026</strong>
+                <strong>1,149</strong> PDFs <i /> <strong>2012-2026</strong>
               </div>
             </div>
           </form>
@@ -153,7 +149,7 @@ export function SearchApp({
             <aside className="model-callout" aria-labelledby="model-callout-title">
               <div>
                 <p className="model-callout-kicker">DESIGNED FOR LLMs</p>
-                <h2 id="model-callout-title">Search here—or give the site to your preferred model.</h2>
+                <h2 id="model-callout-title">Search here, or give the site to your preferred model.</h2>
                 <p>
                   The index above is available for direct research. For deeper questions, the most
                   effective way to use this archive is to give <code>https://sfbos.info</code> to any
@@ -196,7 +192,7 @@ export function SearchApp({
 
             {response.source === "preview" && (
               <div className="preview-notice">
-                Preview index — connect <code>DATABASE_URL</code> and run the ingester for the complete archive.
+                Preview index: connect <code>DATABASE_URL</code> and run the ingester for the complete archive.
               </div>
             )}
 
@@ -218,12 +214,16 @@ export function SearchApp({
                         <span>p. {result.page}</span>
                       </div>
                       <h2>
-                        <a href={result.officialUrl} target="_blank" rel="noreferrer">
-                          {result.title}<span aria-hidden="true"> ↗</span>
+                        <a href={result.transcriptUrl}>
+                          {result.title}
                         </a>
                       </h2>
                       <p><HighlightedText text={result.snippet} query={response.query} /></p>
-                      <div className="source-url">{shortUrl(result.officialUrl)}</div>
+                      <div className="result-source-links">
+                        <a href={result.transcriptUrl}>EXTRACTED TEXT, PAGE {result.page} →</a>
+                        <a href={result.officialUrl} target="_blank" rel="noreferrer">OFFICIAL PDF ↗</a>
+                      </div>
+                      <div className="source-url">{shortUrl(result.transcriptUrl)}</div>
                     </article>
                   </li>
                 ))}
@@ -273,7 +273,7 @@ function formatDate(value: string) {
 function shortUrl(value: string) {
   try {
     const url = new URL(value);
-    return `${url.hostname}${url.pathname}`;
+    return `${url.hostname}${url.pathname}${url.hash}`;
   } catch {
     return value;
   }
