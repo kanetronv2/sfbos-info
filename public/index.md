@@ -36,4 +36,4 @@ Parameters: `q`, `speaker`, `from`, `to`, `limit`, `format`.
 
 Request Markdown with `/api/comments.md`, `?format=md`, or `Accept: text/markdown`.
 
-Search responses provide `transcriptUrl` for canonical HTML evidence and `officialUrl` for the authoritative San Francisco government PDF. Document transcripts advertise Markdown alternatives and accept page ranges of up to 50 pages using `?pages=5-7`.
+Search responses provide `markdownUrl` for a focused Markdown excerpt, `transcriptUrl` for canonical HTML evidence, and `officialUrl` for the authoritative San Francisco government PDF. Document transcripts accept page ranges of up to 50 pages using `?pages=5-7`.

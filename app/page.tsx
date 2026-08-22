@@ -23,13 +23,8 @@ export const metadata: Metadata = {
   },
 };
 
-type HomePageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export default async function HomePage({ searchParams }: HomePageProps) {
+export default function HomePage() {
   const siteUrl = getSiteUrl();
-  const parameters = await searchParams;
   const structuredData = [
     {
       "@context": "https://schema.org",
@@ -75,19 +70,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <>
-      <SearchApp
-        initialQuery={first(parameters.q)}
-        initialYear={first(parameters.year)}
-        initialKind={first(parameters.kind)}
-      />
+      <SearchApp />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
       />
     </>
   );
-}
-
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }

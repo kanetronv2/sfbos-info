@@ -41,8 +41,9 @@ the action immediately preceding each vote. Never treat Aye as support or No as 
 reading that action. An Aye on a motion to disapprove opposes the underlying project; an Aye on a
 motion to table that disapproval supports it.
 
-Each result provides both `transcriptUrl` and `officialUrl`. Use `transcriptUrl` for page-addressable
-HTML evidence and use `officialUrl` to verify against the authoritative City PDF.
+Each result provides `transcriptUrl`, `markdownUrl`, and `officialUrl`. Use `markdownUrl` for the
+smallest directly relevant text excerpt, `transcriptUrl` for page-addressable HTML evidence, and
+`officialUrl` to verify against the authoritative City PDF.
 
 Item responses also identify action types and likely final actions, and extract monetary amounts,
 housing-unit counts, and agreement parties. These are deterministic aids; verify them against the

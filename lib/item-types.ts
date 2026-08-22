@@ -46,6 +46,7 @@ export interface LegislativeItemResult {
   matter: string;
   title: string;
   transcriptUrl: string;
+  markdownUrl: string;
   officialUrl: string;
   startPage: number;
   endPage: number;

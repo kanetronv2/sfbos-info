@@ -8,7 +8,9 @@ const cases = [
       body.interpretation?.voter === "Chan" &&
       body.interpretation?.housingIntent === true &&
       body.legislativeItems?.results?.length > 0 &&
-      body.legislativeItems.results.every((item) => Array.isArray(item.extracted?.addresses)),
+      body.legislativeItems.results.every((item) =>
+        Array.isArray(item.extracted?.addresses) && item.markdownUrl?.includes(".md?pages=")
+      ),
   },
   {
     name: "469 Stevenson vote",
@@ -17,6 +19,7 @@ const cases = [
       item.fileNumber === "210920" &&
       item.transcriptUrl.includes("/documents/") &&
       item.transcriptUrl.includes("#page-") &&
+      item.markdownUrl.includes(".md?pages=") &&
       item.officialUrl.startsWith("https://")
     ),
   },

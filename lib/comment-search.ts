@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { documentUrl } from "./document-url";
+import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
 import { expandQuery } from "./query-expansion";
 import type { PublicCommentResponse, PublicCommentResult } from "./comment-types";
 
@@ -79,6 +79,7 @@ export async function searchPublicComments(options: CommentSearchOptions): Promi
     speaker: row.speaker,
     statement: normalizeWhitespace(row.content),
     transcriptUrl: documentUrl(row.document_id, row.meeting_date, "minutes", row.page_number),
+    markdownUrl: documentMarkdownExcerptUrl(row.document_id, row.meeting_date, "minutes", row.page_number),
     officialUrl: row.official_url,
     page: row.page_number,
     score: Number(row.score),

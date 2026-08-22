@@ -114,6 +114,7 @@ function toMarkdown(response: SearchResponse) {
       `- Meeting date: ${result.meetingDate}`,
       `- Document: ${result.kind}`,
       `- PDF page: ${result.page}`,
+      `- [Focused Markdown excerpt](${result.markdownUrl})`,
       `- [Official source PDF](${result.officialUrl})`,
       "",
       `> ${result.snippet.replace(/\n/g, " ")}`,

@@ -72,7 +72,8 @@ expand common civic-language aliases and can return Markdown using the `.md` rou
 
 Every indexed PDF also has a canonical HTML evidence page at `/documents/{id}/{date}-{kind}`. Search
 results link to the matching `#page-{number}` anchor and retain the official PDF as a separate source.
-Append `.md` to the evidence-page URL for a Markdown transcript, optionally limited with `?pages=5-7`.
+Every API result also provides a `markdownUrl` for the smallest relevant page range. Append `.md` to
+an evidence-page URL for a complete Markdown transcript, optionally limited with `?pages=5-7`.
 
 ## Deploy on Vercel
 

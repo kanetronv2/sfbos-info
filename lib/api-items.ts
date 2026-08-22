@@ -144,6 +144,7 @@ function toMarkdown(response: LegislativeItemResponse) {
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Official PDF pages: ${pageRange(result.startPage, result.endPage)}`,
+      `- [Focused Markdown excerpt](${result.markdownUrl})`,
       `- [Official source PDF](${result.officialUrl})`,
       result.groupCount > 1 ? `- Grouped matching records: ${result.groupCount}` : "",
       "",

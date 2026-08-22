@@ -20,3 +20,14 @@ export function documentMarkdownPath(id: string, meetingDate: string, kind: stri
 export function documentMarkdownUrl(id: string, meetingDate: string, kind: string) {
   return `${getSiteUrl()}${documentMarkdownPath(id, meetingDate, kind)}`;
 }
+
+export function documentMarkdownExcerptUrl(
+  id: string,
+  meetingDate: string,
+  kind: string,
+  startPage: number,
+  endPage = startPage,
+) {
+  const selection = startPage === endPage ? String(startPage) : `${startPage}-${endPage}`;
+  return `${documentMarkdownUrl(id, meetingDate, kind)}?pages=${selection}`;
+}

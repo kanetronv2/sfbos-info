@@ -70,6 +70,7 @@ function toMarkdown(response: PublicCommentResponse) {
       "",
       `- Meeting: ${result.meetingDate}`,
       `- [Extracted minutes, page ${result.page}](${result.transcriptUrl})`,
+      `- [Focused Markdown excerpt](${result.markdownUrl})`,
       `- [Official source PDF](${result.officialUrl})`,
       "",
       `> ${result.statement}`,

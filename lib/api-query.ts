@@ -159,6 +159,7 @@ function toMarkdown(response: EvidenceResponse) {
       `### ${index + 1}. File ${item.fileNumber}: [${item.title}](${item.transcriptUrl})`,
       "",
       `- Meeting: ${item.meetingDate}`,
+      `- [Focused Markdown excerpt](${item.markdownUrl})`,
       `- [Official City PDF](${item.officialUrl})`,
     );
     if (item.extracted.housingUnits.length) lines.push(`- Housing-unit counts: ${item.extracted.housingUnits.join(", ")}`);
@@ -179,6 +180,7 @@ function toMarkdown(response: EvidenceResponse) {
       `### ${index + 1}. [${page.title}, page ${page.page}](${page.transcriptUrl})`,
       "",
       `- Meeting: ${page.meetingDate}`,
+      `- [Focused Markdown excerpt](${page.markdownUrl})`,
       `- [Official City PDF](${page.officialUrl})`,
       "",
       `> ${page.snippet}`,
@@ -193,6 +195,7 @@ function toMarkdown(response: EvidenceResponse) {
       lines.push(
         `### ${comment.speaker}`, "",
         `- [Extracted minutes, page ${comment.page}](${comment.transcriptUrl})`,
+        `- [Focused Markdown excerpt](${comment.markdownUrl})`,
         `- [Official City PDF](${comment.officialUrl})`, "",
         `> ${comment.statement}`, "",
       );
@@ -256,6 +259,7 @@ function publicHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+    Link: '</llms.txt>; rel="describedby", </openapi.yaml>; rel="service-desc"; type="application/yaml"',
     "X-Robots-Tag": "noindex, follow",
   };
 }

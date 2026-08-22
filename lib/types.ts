@@ -7,6 +7,7 @@ export interface SearchResult {
   kind: DocumentKind;
   title: string;
   transcriptUrl: string;
+  markdownUrl: string;
   officialUrl: string;
   page: number;
   snippet: string;

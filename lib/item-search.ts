@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { extractItemFacts } from "./item-extraction";
-import { documentUrl } from "./document-url";
+import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
 import { expandQuery } from "./query-expansion";
 import type {
   ActionType,
@@ -220,6 +220,13 @@ export async function searchLegislativeItems(
     matter: row.matter,
     title: row.title,
     transcriptUrl: documentUrl(row.document_id, row.meeting_date, "minutes", row.start_page),
+    markdownUrl: documentMarkdownExcerptUrl(
+      row.document_id,
+      row.meeting_date,
+      "minutes",
+      row.start_page,
+      row.end_page,
+    ),
     officialUrl: row.official_url,
     startPage: row.start_page,
     endPage: row.end_page,

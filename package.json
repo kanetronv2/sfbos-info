@@ -11,7 +11,8 @@
     "db:ingest": "node --env-file=.env.local scripts/ingest.mjs",
     "db:items": "node --env-file=.env.local scripts/ingest-items.mjs",
     "db:comments": "node --env-file=.env.local scripts/ingest-comments.mjs",
-    "test:infra": "node scripts/smoke.mjs"
+    "test:infra": "node scripts/smoke.mjs",
+    "test:model-flow": "node scripts/model-flow.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

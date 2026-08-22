@@ -5,6 +5,7 @@ export interface PublicCommentResult {
   speaker: string;
   statement: string;
   transcriptUrl: string;
+  markdownUrl: string;
   officialUrl: string;
   page: number;
   score: number;

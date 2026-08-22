@@ -14,20 +14,10 @@ const examples = [
 const examplePrompt =
   "How many housing units has Connie Chan voted against? Which addresses? Use https://sfbos.info";
 
-type SearchAppProps = {
-  initialQuery?: string;
-  initialYear?: string;
-  initialKind?: string;
-};
-
-export function SearchApp({
-  initialQuery = "",
-  initialYear = "",
-  initialKind = "",
-}: SearchAppProps) {
-  const [query, setQuery] = useState(initialQuery);
-  const [year, setYear] = useState(initialYear);
-  const [kind, setKind] = useState(initialKind);
+export function SearchApp() {
+  const [query, setQuery] = useState("");
+  const [year, setYear] = useState("");
+  const [kind, setKind] = useState("");
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,7 +26,16 @@ export function SearchApp({
   const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (initialQuery) void runSearch(initialQuery, initialYear, initialKind);
+    const urlStateTimer = window.setTimeout(() => {
+      const parameters = new URLSearchParams(window.location.search);
+      const initialQuery = parameters.get("q") ?? "";
+      const initialYear = parameters.get("year") ?? "";
+      const initialKind = parameters.get("kind") ?? "";
+      setQuery(initialQuery);
+      setYear(initialYear);
+      setKind(initialKind);
+      if (initialQuery) void runSearch(initialQuery, initialYear, initialKind);
+    }, 0);
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "/" && document.activeElement?.tagName !== "INPUT") {
@@ -46,6 +45,7 @@ export function SearchApp({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      window.clearTimeout(urlStateTimer);
       window.removeEventListener("keydown", onKeyDown);
       if (copyResetRef.current) clearTimeout(copyResetRef.current);
     };
