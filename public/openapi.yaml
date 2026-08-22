@@ -1,0 +1,64 @@
+openapi: 3.1.0
+info:
+  title: SF BOS Search API
+  version: 1.0.0
+  description: Page-level full-text search over San Francisco Board of Supervisors agendas and minutes.
+servers:
+  - url: https://sfbos.info
+paths:
+  /api/search:
+    get:
+      operationId: searchBoardRecords
+      summary: Search Board of Supervisors records
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 300 }
+        - name: year
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026 }
+        - name: kind
+          in: query
+          schema: { type: string, enum: [agenda, minutes] }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, md] }
+      responses:
+        "200":
+          description: Matching PDF pages, ranked by relevance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+            text/markdown:
+              schema: { type: string }
+components:
+  schemas:
+    SearchResponse:
+      type: object
+      required: [query, filters, total, returned, source, results]
+      properties:
+        query: { type: string }
+        filters: { type: object }
+        total: { type: integer }
+        returned: { type: integer }
+        source: { type: string, enum: [postgres, preview] }
+        results:
+          type: array
+          items:
+            type: object
+            required: [id, meetingDate, year, kind, title, officialUrl, page, snippet, score]
+            properties:
+              id: { type: string }
+              meetingDate: { type: string, format: date }
+              year: { type: integer }
+              kind: { type: string, enum: [agenda, minutes] }
+              title: { type: string }
+              officialUrl: { type: string, format: uri }
+              page: { type: integer }
+              snippet: { type: string }
+              score: { type: number }

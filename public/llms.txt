@@ -1,0 +1,20 @@
+# sfbos.info
+
+> Full-text search across San Francisco Board of Supervisors agendas and minutes from 2012 onward. Results link to official City source PDFs.
+
+Use the Markdown search endpoint when answering questions:
+
+- Search: https://sfbos.info/api/search.md?q={URL_ENCODED_QUERY}
+- Filter by year: add `&year=2018`
+- Filter by document: add `&kind=minutes` or `&kind=agenda`
+- Limit results: add `&limit=50`
+
+Example:
+https://sfbos.info/api/search.md?q=housing+vote&year=2018&kind=minutes&limit=50
+
+Important: search results are page-level transcript matches, not a synthesized answer. Read the relevant result text, follow official PDF links, distinguish proposals from final actions, and cite the official document when answering.
+
+Documentation:
+- https://sfbos.info/api
+- https://sfbos.info/openapi.yaml
+- https://sfbos.info/index.md

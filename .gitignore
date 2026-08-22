@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.vercel/
+.env
+.env.local
+*.log
+
+# The local source archive is reproducible via scripts and is far too large for
+# GitHub or a Vercel source deployment.
+data/

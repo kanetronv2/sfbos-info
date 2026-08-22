@@ -1,0 +1,9 @@
+# The source PDFs are ingested into Postgres and are not runtime assets.
+data/
+
+# Local-only tooling and generated artifacts.
+scripts/
+db/
+*.log
+.env*
+!.env.example
