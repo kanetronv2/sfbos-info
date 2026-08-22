@@ -4,14 +4,19 @@ sfbos.info is an independent full-text index of San Francisco Board of Superviso
 
 ## Ask a question with the archive
 
-1. For vote questions, request `https://sfbos.info/api/items.md?q={query}`.
-2. Add `voter`, `position`, `final`, `groupBy`, `from`, `to`, and `limit` parameters when useful.
+1. Send the complete question to `https://sfbos.info/api/query.md?q={URL_ENCODED_QUESTION}`.
+2. Use the returned legislative files, roll calls, extracted facts, transcript anchors, and official PDFs as an evidence bundle.
 3. Read the action attached to every roll call; an Aye or No has no meaning without it.
-4. Use `https://sfbos.info/api/search.md?q={query}` for broad page-level discovery.
-5. Use `https://sfbos.info/api/comments.md?q={query}` for individual public-comment summaries.
-6. Follow the result's page-addressable HTML evidence, then open the official PDF and verify the final action before answering.
+4. Use the specialized endpoints below when explicit filters or exhaustive follow-up searches are needed.
+5. Follow the result's page-addressable evidence, then open the official PDF and verify decisive claims before answering.
 
 ## API
+
+`GET /api/query`
+
+Parameters: `q`, `format`.
+
+Request Markdown with `/api/query.md`, `?format=md`, or `Accept: text/markdown`.
 
 `GET /api/search`
 
@@ -31,4 +36,4 @@ Parameters: `q`, `speaker`, `from`, `to`, `limit`, `format`.
 
 Request Markdown with `/api/comments.md`, `?format=md`, or `Accept: text/markdown`.
 
-Search responses provide `transcriptUrl` for canonical HTML evidence and `officialUrl` for the authoritative San Francisco government PDF.
+Search responses provide `transcriptUrl` for canonical HTML evidence and `officialUrl` for the authoritative San Francisco government PDF. Document transcripts advertise Markdown alternatives and accept page ranges of up to 50 pages using `?pages=5-7`.

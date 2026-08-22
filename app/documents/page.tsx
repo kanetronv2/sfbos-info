@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listDocuments } from "@/lib/documents";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "PDF archive",
-  description: "Every indexed San Francisco Board of Supervisors agenda and minutes PDF, linked to its official City source.",
+  title: "San Francisco Board of Supervisors PDF Archive",
+  description: "Browse every indexed San Francisco Board of Supervisors agenda and meeting-minutes PDF from 2012 onward, with searchable HTML transcripts and official City sources.",
+  alternates: { canonical: "/documents" },
+  openGraph: {
+    type: "website",
+    url: "/documents",
+    title: "San Francisco Board of Supervisors PDF Archive",
+    description: "Agendas, meeting minutes, searchable transcripts, and official City source PDFs from 2012 onward.",
+  },
 };
 
 export default async function DocumentsPage() {
@@ -19,6 +27,25 @@ export default async function DocumentsPage() {
   }
   const agendaCount = documents.filter((document) => document.kind === "agenda").length;
   const minutesCount = documents.length - agendaCount;
+  const siteUrl = getSiteUrl();
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "San Francisco Board of Supervisors PDF Archive",
+    description: metadata.description,
+    url: `${siteUrl}/documents`,
+    mainEntity: {
+      "@type": "ItemList",
+      name: "Board of Supervisors agendas and minutes",
+      numberOfItems: documents.length,
+      itemListOrder: "https://schema.org/ItemListOrderDescending",
+    },
+    isPartOf: {
+      "@type": "WebSite",
+      name: "SF BOS Search",
+      url: siteUrl,
+    },
+  };
 
   return (
     <div className="archive-shell">
@@ -82,6 +109,10 @@ export default async function DocumentsPage() {
           </div>
         )}
       </main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
     </div>
   );
 }

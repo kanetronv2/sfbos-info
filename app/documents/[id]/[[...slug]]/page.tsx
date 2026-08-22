@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { documentSlug, documentUrl } from "@/lib/document-url";
+import { documentMarkdownPath, documentSlug, documentUrl } from "@/lib/document-url";
 import { getDocumentEvidence } from "@/lib/documents";
 
 type EvidencePageProps = {
@@ -17,12 +17,16 @@ export async function generateMetadata({ params }: EvidencePageProps): Promise<M
   return {
     title: document.title,
     description: `Extracted text for the ${document.meetingDate} Board of Supervisors ${document.kind}, with a link to the official PDF.`,
-    alternates: { canonical: document.transcriptPath },
+    alternates: {
+      canonical: document.transcriptPath,
+      types: { "text/markdown": documentMarkdownPath(document.id, document.meetingDate, document.kind) },
+    },
     openGraph: {
       type: "article",
       title: document.title,
       description: `Page-by-page extracted text and official source for this Board of Supervisors ${document.kind}.`,
       url: document.transcriptPath,
+      publishedTime: `${document.meetingDate}T00:00:00Z`,
     },
   };
 }
@@ -35,22 +39,57 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
   const expectedSlug = documentSlug(document.meetingDate, document.kind);
   if (slug?.length !== 1 || slug[0] !== expectedSlug) permanentRedirect(document.transcriptPath);
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    url: documentUrl(document.id, document.meetingDate, document.kind),
-    mainEntity: {
-      "@type": "DigitalDocument",
+  const documentPageUrl = documentUrl(document.id, document.meetingDate, document.kind);
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
       name: document.title,
+      description: `Page-by-page extracted text for the ${document.meetingDate} San Francisco Board of Supervisors ${document.kind}.`,
+      url: documentPageUrl,
       datePublished: document.meetingDate,
-      encodingFormat: "application/pdf",
-      url: document.officialUrl,
-      publisher: {
-        "@type": "GovernmentOrganization",
-        name: "City and County of San Francisco",
+      isPartOf: {
+        "@type": "CollectionPage",
+        name: "San Francisco Board of Supervisors PDF Archive",
+        url: `${documentPageUrl.split("/documents/")[0]}/documents`,
+      },
+      mainEntity: {
+        "@type": "DigitalDocument",
+        name: document.title,
+        datePublished: document.meetingDate,
+        encodingFormat: "application/pdf",
+        url: document.officialUrl,
+        publisher: {
+          "@type": "GovernmentOrganization",
+          name: "City and County of San Francisco",
+        },
       },
     },
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "PDF archive",
+          item: `${documentPageUrl.split("/documents/")[0]}/documents`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: String(document.year),
+          item: `${documentPageUrl.split("/documents/")[0]}/documents#${document.year}`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: document.title,
+          item: documentPageUrl,
+        },
+      ],
+    },
+  ];
 
   return (
     <div className="evidence-shell">
@@ -86,6 +125,9 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
           <div className="evidence-actions">
             <a className="source-button" href={document.officialUrl} target="_blank" rel="noreferrer">
               VIEW OFFICIAL PDF ↗
+            </a>
+            <a href={documentMarkdownPath(document.id, document.meetingDate, document.kind)}>
+              VIEW AS MARKDOWN ↗
             </a>
             <a href="#extracted-text">JUMP TO EXTRACTED TEXT ↓</a>
           </div>

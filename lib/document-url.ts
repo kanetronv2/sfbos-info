@@ -12,3 +12,11 @@ export function documentPath(id: string, meetingDate: string, kind: string, page
 export function documentUrl(id: string, meetingDate: string, kind: string, page?: number) {
   return `${getSiteUrl()}${documentPath(id, meetingDate, kind, page)}`;
 }
+
+export function documentMarkdownPath(id: string, meetingDate: string, kind: string) {
+  return `${documentPath(id, meetingDate, kind)}.md`;
+}
+
+export function documentMarkdownUrl(id: string, meetingDate: string, kind: string) {
+  return `${getSiteUrl()}${documentMarkdownPath(id, meetingDate, kind)}`;
+}

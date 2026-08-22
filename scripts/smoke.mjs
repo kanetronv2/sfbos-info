@@ -2,6 +2,15 @@ const baseUrl = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 
 const cases = [
   {
+    name: "natural-language evidence bundle",
+    path: "/api/query?q=How+many+housing+units+has+Connie+Chan+voted+against%3F+Which+addresses%3F+Use+https%3A%2F%2Fsfbos.info",
+    test: (body) =>
+      body.interpretation?.voter === "Chan" &&
+      body.interpretation?.housingIntent === true &&
+      body.legislativeItems?.results?.length > 0 &&
+      body.legislativeItems.results.every((item) => Array.isArray(item.extracted?.addresses)),
+  },
+  {
     name: "469 Stevenson vote",
     path: "/api/items?q=469+Stevenson&voter=Chan&from=2021&to=2021&groupBy=file",
     test: (body) => body.results.some((item) =>

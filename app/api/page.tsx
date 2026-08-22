@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "API",
-  description: "API documentation for the SF BOS full-text search index.",
+  title: "San Francisco Board of Supervisors Search API",
+  description: "Provider-neutral JSON and Markdown APIs for searching San Francisco Board of Supervisors records, votes, legislative files, and public comments.",
+  alternates: {
+    canonical: "/api",
+    types: { "application/yaml": "/openapi.yaml", "text/plain": "/llms.txt" },
+  },
+  openGraph: {
+    type: "website",
+    url: "/api",
+    title: "San Francisco Board of Supervisors Search API",
+    description: "JSON and Markdown access to Board records, legislative files, votes, and public comments.",
+  },
 };
 
 const jsonExample = `GET /api/search?q=affordable+housing&year=2018&kind=minutes
@@ -19,6 +30,22 @@ const commentExample = `GET /api/comments.md?q=Great+Highway&from=2021&to=2021
 Accept: text/markdown`;
 
 export default function ApiPage() {
+  const siteUrl = getSiteUrl();
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebAPI",
+    name: "SF BOS Search API",
+    description: metadata.description,
+    url: `${siteUrl}/api`,
+    documentation: `${siteUrl}/openapi.yaml`,
+    provider: {
+      "@type": "Organization",
+      name: "SF BOS Search",
+      url: siteUrl,
+    },
+    termsOfService: `${siteUrl}/llms.txt`,
+  };
+
   return (
     <div className="docs-shell">
       <header className="docs-header">
@@ -32,6 +59,15 @@ export default function ApiPage() {
           Page search across agendas and minutes, plus action-aware legislative-item and
           roll-call search for researching votes. Every response links to the official record.
         </p>
+
+        <section>
+          <h2><code>GET /api/query</code></h2>
+          <p>
+            Send a complete natural-language question to receive one compact evidence bundle drawn
+            from legislative files, page text, recorded votes, and relevant public comments.
+          </p>
+          <pre><code>{`GET /api/query.md?q=How+many+housing+units+has+Connie+Chan+voted+against%3F+Which+addresses%3F`}</code></pre>
+        </section>
 
         <section>
           <h2><code>GET /api/search</code></h2>
@@ -112,6 +148,10 @@ export default function ApiPage() {
           </ul>
         </section>
       </main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
     </div>
   );
 }

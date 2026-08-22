@@ -53,6 +53,7 @@ Both read from Postgres, are resumable, and accept the same year, limit, force, 
 
 ## API
 
+- `GET /api/query.md?q=How+many+housing+units+has+Connie+Chan+voted+against%3F`
 - `GET /api/search?q=affordable+housing`
 - `GET /api/search.md?q=housing+vote&year=2018`
 - `GET /api/items?q=dwelling+units&voter=Chan&position=no&from=2021&to=2026`
@@ -62,14 +63,16 @@ Both read from Postgres, are resumable, and accept the same year, limit, force, 
 - `GET /openapi.yaml`
 - `GET /llms.txt`
 
-Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, `position`, `final`,
+Natural-language evidence search federates the specialized indexes into one answer-engine-friendly
+response. Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, `position`, `final`,
 `groupBy`, `from`, `to`, and `limit`; it returns typed actions and extracted amounts, housing-unit
-counts, and agreement parties. Comment search supports `speaker`, `from`, `to`, and `limit`. All APIs
+counts, addresses, and agreement parties. Comment search supports `speaker`, `from`, `to`, and `limit`. All APIs
 expand common civic-language aliases and can return Markdown using the `.md` route, `?format=md`, or
 `Accept: text/markdown`.
 
 Every indexed PDF also has a canonical HTML evidence page at `/documents/{id}/{date}-{kind}`. Search
 results link to the matching `#page-{number}` anchor and retain the official PDF as a separate source.
+Append `.md` to the evidence-page URL for a Markdown transcript, optionally limited with `?pages=5-7`.
 
 ## Deploy on Vercel
 

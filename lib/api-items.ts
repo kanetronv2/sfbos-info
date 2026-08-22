@@ -112,6 +112,7 @@ function publicHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+    "X-Robots-Tag": "noindex, follow",
   };
 }
 
@@ -149,13 +150,14 @@ function toMarkdown(response: LegislativeItemResponse) {
       `> ${result.snippet}`,
       "",
     );
-    if (result.extracted.amounts.length || result.extracted.housingUnits.length || result.extracted.parties.length) {
+    if (result.extracted.amounts.length || result.extracted.housingUnits.length || result.extracted.addresses.length || result.extracted.parties.length) {
       lines.push("### Extracted facts", "");
       if (result.extracted.parties.length) lines.push(`- Parties: ${result.extracted.parties.join("; ")}`);
       if (result.extracted.amounts.length) {
         lines.push(`- Amounts: ${result.extracted.amounts.map((amount) => `${amount.raw} (${amount.qualifier})`).join("; ")}`);
       }
       if (result.extracted.housingUnits.length) lines.push(`- Housing-unit counts: ${result.extracted.housingUnits.join(", ")}`);
+      if (result.extracted.addresses.length) lines.push(`- Addresses: ${result.extracted.addresses.join("; ")}`);
       lines.push("");
     }
     if (result.rollCalls.length) {

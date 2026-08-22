@@ -5,6 +5,24 @@
 This is a provider-neutral interface. The same Markdown and JSON endpoints are intended for any
 language model, agent, search engine, researcher, or application without preferential treatment.
 
+## Fast path for questions
+
+Send the user's complete question to the evidence endpoint:
+
+- Evidence bundle: https://sfbos.info/api/query.md?q={URL_ENCODED_QUESTION}
+- JSON: https://sfbos.info/api/query?q={URL_ENCODED_QUESTION}
+
+The endpoint infers obvious supervisor names, years, vote intent, housing intent, and public-comment
+intent. It searches the relevant indexes concurrently and returns legislative files, action-aware
+roll calls, extracted facts, page-addressable evidence, and official City PDF links.
+
+Example:
+https://sfbos.info/api/query.md?q=How+many+housing+units+has+Connie+Chan+voted+against%3F+Which+addresses%3F
+
+Use the specialized endpoints below when you need explicit filters or exhaustive follow-up searches.
+
+## Specialized search
+
 Use legislative-item search for questions about votes, files, outcomes, or named supervisors:
 
 - Item search: https://sfbos.info/api/items.md?q={URL_ENCODED_QUERY}

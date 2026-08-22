@@ -2,12 +2,14 @@ import type { ExtractedAmount, ExtractedFacts } from "./item-types";
 
 const moneyPattern = /\$\s*([\d,]+(?:\.\d+)?)\s*(billion|million|thousand|b|m|k)?/gi;
 const unitPattern = /\b([\d,]+)\s+(?:new\s+|net\s+|affordable\s+|residential\s+|dwelling\s+|housing\s+)*(?:housing\s+|residential\s+|dwelling\s+)?units?\b/gi;
+const addressPattern = /\b\d{1,5}(?:-\d{1,5})?\s+(?:(?:North|South|East|West|N\.?|S\.?|E\.?|W\.?)\s+)?(?:[\p{L}\p{N}'&.-]+\s+){0,6}(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|Way|Lane|Ln\.?|Court|Ct\.?|Place|Pl\.?|Highway|Hwy\.?)\b/giu;
 
 export function extractItemFacts(title: string, content: string): ExtractedFacts {
   const text = `${title}\n${content}`;
   return {
     amounts: uniqueAmounts(text).slice(0, 20),
     housingUnits: uniqueNumbers(text, unitPattern).slice(0, 20),
+    addresses: extractAddresses(text).slice(0, 20),
     parties: extractParties(title),
   };
 }
@@ -48,6 +50,17 @@ function uniqueNumbers(text: string, pattern: RegExp) {
   const values = new Set<number>();
   for (const match of text.matchAll(pattern)) values.add(Number(match[1].replace(/,/g, "")));
   return [...values].filter((value) => Number.isFinite(value) && value > 0);
+}
+
+function extractAddresses(text: string) {
+  const addresses = new Map<string, string>();
+  for (const match of text.matchAll(addressPattern)) {
+    const rawAddress = match[0].replace(/\s+/g, " ").replace(/[.,;:]+$/, "").trim();
+    const address = rawAddress.split(/\s+-\s+/).at(-1) ?? rawAddress;
+    if (/^1\s+Dr\.?\s+Carlton\s+B\.?\s+Goodlett\s+Place$/i.test(address)) continue;
+    addresses.set(address.toLowerCase().replace(/\./g, ""), address);
+  }
+  return [...addresses.values()];
 }
 
 function extractParties(title: string) {

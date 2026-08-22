@@ -1,11 +1,36 @@
 openapi: 3.1.0
 info:
   title: SF BOS Search API
-  version: 1.3.0
-  description: Page-level and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
+  version: 1.4.0
+  description: Provider-neutral evidence retrieval, page-level search, and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
+externalDocs:
+  description: Model and agent access guide
+  url: https://sfbos.info/llms.txt
 servers:
   - url: https://sfbos.info
 paths:
+  /api/query:
+    get:
+      operationId: retrieveBoardEvidence
+      summary: Retrieve an evidence bundle for a natural-language question
+      description: Infers obvious names, years, and question intent, then searches legislative items, pages, recorded votes, and relevant public-comment summaries concurrently.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 500 }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, md] }
+      responses:
+        "200":
+          description: A compact evidence bundle with transcript and official PDF citations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceQueryResponse"
+            text/markdown:
+              schema: { type: string }
   /api/search:
     get:
       operationId: searchBoardRecords
@@ -119,6 +144,31 @@ paths:
               schema: { type: string }
 components:
   schemas:
+    EvidenceQueryResponse:
+      type: object
+      required: [question, interpretation, guidance, legislativeItems, pageMatches, publicComments]
+      properties:
+        question: { type: string }
+        interpretation:
+          type: object
+          required: [searchQuery, voter, recordedPosition, fromYear, toYear, voteIntent, housingIntent, commentIntent, finalOnly]
+          properties:
+            searchQuery: { type: string }
+            voter: { type: [string, "null"] }
+            recordedPosition: { type: [string, "null"], enum: [aye, no, null] }
+            fromYear: { type: integer }
+            toYear: { type: integer }
+            voteIntent: { type: boolean }
+            housingIntent: { type: boolean }
+            commentIntent: { type: boolean }
+            finalOnly: { type: boolean }
+        guidance: { type: array, items: { type: string } }
+        legislativeItems: { $ref: "#/components/schemas/ItemSearchResponse" }
+        pageMatches: { $ref: "#/components/schemas/SearchResponse" }
+        publicComments:
+          oneOf:
+            - { $ref: "#/components/schemas/CommentSearchResponse" }
+            - { type: "null" }
     SearchResponse:
       type: object
       required: [query, interpretedQueries, filters, total, returned, source, results]
@@ -187,7 +237,7 @@ components:
               groupCount: { type: integer }
               extracted:
                 type: object
-                required: [amounts, housingUnits, parties]
+                required: [amounts, housingUnits, addresses, parties]
                 properties:
                   amounts:
                     type: array
@@ -200,6 +250,7 @@ components:
                         currency: { type: string, const: USD }
                         qualifier: { type: string, enum: [not-to-exceed, increase, decrease, appropriation, revenue, stated] }
                   housingUnits: { type: array, items: { type: integer } }
+                  addresses: { type: array, items: { type: string } }
                   parties: { type: array, items: { type: string } }
               rollCalls:
                 type: array

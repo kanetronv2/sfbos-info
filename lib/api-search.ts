@@ -72,6 +72,7 @@ function publicHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+    "X-Robots-Tag": "noindex, follow",
   };
 }
 

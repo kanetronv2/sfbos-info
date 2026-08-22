@@ -34,6 +34,7 @@ export interface ExtractedAmount {
 export interface ExtractedFacts {
   amounts: ExtractedAmount[];
   housingUnits: number[];
+  addresses: string[];
   parties: string[];
 }
 
