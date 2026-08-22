@@ -216,3 +216,34 @@ footer div:last-child { display: flex; gap: 14px; }
 .parameter-grid > code { color: var(--accent-dark); font-weight: 700; }
 .parameter-grid > p { color: var(--muted); font-size: 13px; }
 @media (max-width: 720px) { .docs-header { height: 58px; padding: 0 18px; } .docs-shell main { padding-top: 50px; } }
+
+.archive-shell { min-height: 100vh; }
+.archive-main { width: min(1120px, calc(100% - 56px)); margin: 0 auto; padding: 72px 0 110px; }
+.archive-main h1 { font-size: clamp(50px, 8vw, 78px); }
+.archive-lede { max-width: 690px; margin: 24px 0 36px; color: var(--muted); font-size: 17px; line-height: 1.6; }
+.archive-stats { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 62px; border: 1px solid var(--ink); background: var(--panel); }
+.archive-stats span { padding: 15px 20px; border-right: 1px solid var(--line); color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.archive-stats strong { color: var(--ink); font-size: 12px; }
+.archive-year { margin-top: 54px; }
+.archive-year > header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+.archive-year h2 { margin: 0; font-size: 31px; letter-spacing: -.04em; }
+.archive-year > header span { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.archive-year ol { margin: 0; padding: 0; list-style: none; }
+.archive-year li { display: grid; grid-template-columns: 74px 78px minmax(0, 1fr) 58px; gap: 14px; align-items: baseline; padding: 13px 4px; border-bottom: 1px solid var(--line); }
+.archive-year time, .page-count { color: var(--muted); font: 10px var(--mono); }
+.document-kind { width: fit-content; padding: 3px 6px; border: 1px solid var(--line); font: 8px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.document-kind.minutes { border-color: var(--ink); }
+.archive-year a { min-width: 0; font-size: 13px; line-height: 1.4; text-decoration: none; }
+.archive-year a:hover { color: var(--accent-dark); text-decoration: underline; text-underline-offset: 3px; }
+.page-count { text-align: right; white-space: nowrap; }
+.archive-empty { padding: 28px; border: 1px solid var(--line); color: var(--muted); font: 12px/1.6 var(--mono); }
+
+@media (max-width: 720px) {
+  .archive-main { width: calc(100% - 36px); padding: 50px 0 80px; }
+  .archive-stats { margin-bottom: 44px; }
+  .archive-stats span { width: 50%; border-bottom: 1px solid var(--line); }
+  .archive-year li { grid-template-columns: 62px 1fr; gap: 8px 12px; padding: 14px 2px; }
+  .document-kind { grid-column: 1; }
+  .archive-year a { grid-column: 2; grid-row: 1 / span 2; }
+  .page-count { display: none; }
+}

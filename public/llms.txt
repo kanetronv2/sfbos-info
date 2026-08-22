@@ -48,6 +48,7 @@ https://sfbos.info/api/search.md?q=housing+vote&year=2018&kind=minutes&limit=50
 Important: results are evidence, not a synthesized answer. Read the relevant result text, follow official PDF links, distinguish proposals from final actions, avoid double-counting repeated votes or findings, and cite the official document when answering.
 
 Documentation:
+- https://sfbos.info/documents (complete PDF archive)
 - https://sfbos.info/api
 - https://sfbos.info/openapi.yaml
 - https://sfbos.info/index.md

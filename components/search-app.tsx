@@ -92,6 +92,7 @@ export function SearchApp({
           <span>sfbos.info</span>
         </Link>
         <nav aria-label="Primary navigation">
+          <Link href="/documents">PDFS</Link>
           <Link href="/api">API</Link>
           <a href="/llms.txt">FOR MODELS</a>
           <a href="/openapi.yaml">SCHEMA</a>
