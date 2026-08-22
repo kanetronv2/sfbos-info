@@ -113,9 +113,9 @@ export function SearchApp() {
         </Link>
         <nav aria-label="Primary navigation">
           <Link href="/documents">PDFS</Link>
+          <Link href="/supervisors">SUPERVISORS</Link>
           <Link href="/api">API</Link>
           <a href="/llms.txt">FOR MODELS</a>
-          <a href="/openapi.yaml">SCHEMA</a>
         </nav>
       </header>
 

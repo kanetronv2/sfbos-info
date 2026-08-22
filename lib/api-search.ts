@@ -12,6 +12,7 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   const rawYear = url.searchParams.get("year");
   const rawKind = url.searchParams.get("kind");
   const rawLimit = url.searchParams.get("limit");
+  const rawMode = url.searchParams.get("mode") ?? "lexical";
   const markdown =
     forceMarkdown ||
     ["md", "markdown"].includes((url.searchParams.get("format") ?? "").toLowerCase()) ||
@@ -33,7 +34,8 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   const limit = parseLimit(rawLimit);
   if (limit === null) return errorResponse(`limit must be an integer from 1 through ${MAX_LIMIT}`, markdown);
 
-  const response = await searchDocuments({ query, year, kind, limit });
+  if (rawMode !== "lexical" && rawMode !== "hybrid") return errorResponse("mode must be lexical or hybrid", markdown);
+  const response = await searchDocuments({ query, year, kind, limit, mode: rawMode });
   if (markdown) {
     return new Response(toMarkdown(response), { headers: markdownHeaders() });
   }
@@ -100,6 +102,7 @@ function toMarkdown(response: SearchResponse) {
     `- Matching pages: ${response.total}`,
     `- Results returned: ${response.returned}`,
     `- Index: ${response.source === "postgres" ? "complete corpus" : "preview only"}`,
+    `- Retrieval: ${response.retrieval.used}${response.retrieval.fallbackReason ? ` (fallback: ${response.retrieval.fallbackReason})` : ""}`,
     "",
   ].filter((line): line is string => line !== null);
 

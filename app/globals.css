@@ -296,6 +296,7 @@ footer div:last-child { display: flex; gap: 14px; }
 .structured-item summary > a { text-align: right; text-underline-offset: 3px; }
 .structured-item[open] summary { background: var(--panel); }
 .structured-votes { display: grid; gap: 1px; padding: 0 5px 16px 107px; }
+.structured-provenance { margin: -7px 5px 12px 107px; color: var(--muted); font: 9px var(--mono); letter-spacing: .05em; }
 .structured-votes article { padding: 17px; border: 1px solid var(--line); background: var(--panel); }
 .structured-votes article > div { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .structured-votes article > div span, .structured-votes article > div strong { padding: 3px 6px; border: 1px solid var(--line); font: 8px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
@@ -330,4 +331,48 @@ footer div:last-child { display: flex; gap: 14px; }
   .structured-votes { padding-left: 5px; }
   .no-recorded-vote { padding-left: 17px; }
   .page-text { padding: 18px; font-size: 10px; }
+}
+
+.entity-list, .vote-evidence-list, .version-list { margin: 0; padding: 0; list-style: none; }
+.entity-list { border-top: 2px solid var(--ink); }
+.entity-list li { display: grid; grid-template-columns: minmax(180px, 1fr) 1fr auto; gap: 20px; align-items: baseline; padding: 16px 4px; border-bottom: 1px solid var(--line); }
+.entity-list a { font-size: 18px; font-weight: 700; text-underline-offset: 4px; }
+.entity-list span, .entity-list strong { color: var(--muted); font: 10px var(--mono); }
+.position-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 55px; border: 1px solid var(--ink); background: var(--panel); }
+.position-grid div { display: grid; gap: 10px; padding: 20px; border-right: 1px solid var(--line); }
+.position-grid div:last-child { border-right: 0; }
+.position-grid span { color: var(--muted); font: 9px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+.position-grid strong { font: 28px var(--mono); }
+.profile-provenance { margin: 0 0 65px; padding: 26px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.profile-provenance h2 { margin: 0 0 20px; font-size: 21px; }
+.profile-provenance dl { display: grid; grid-template-columns: 120px 1fr; margin: 0; }
+.profile-provenance dt, .profile-provenance dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); font: 10px/1.5 var(--mono); }
+.profile-provenance dt { color: var(--muted); text-transform: uppercase; }
+.vote-evidence-list > li { padding: 24px 4px; border-bottom: 1px solid var(--line); }
+.vote-evidence-meta { display: flex; flex-wrap: wrap; gap: 13px; color: var(--muted); font: 9px var(--mono); text-transform: uppercase; }
+.vote-evidence-meta strong { color: var(--accent-dark); }
+.vote-evidence-list h3 { margin: 12px 0 8px; font-size: 16px; }
+.vote-evidence-list p { margin: 0; color: var(--muted); font: 11px/1.6 var(--mono); }
+.vote-evidence-list li > div:last-child { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+.vote-evidence-list a { color: var(--accent-dark); font: 700 9px var(--mono); letter-spacing: .06em; }
+.quality-grid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.quality-grid > div { display: grid; gap: 8px; padding: 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel); }
+.quality-grid span { color: var(--muted); font: 9px var(--mono); text-transform: uppercase; }
+.quality-grid strong { font: 24px var(--mono); }
+.quality-grid .quality-bad { border-left: 3px solid var(--accent); }
+.version-list li { display: grid; gap: 8px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.version-list code { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 9px; }
+.version-list span, .version-list a { color: var(--muted); font: 9px var(--mono); }
+.version-list a { color: var(--accent-dark); font-weight: 700; }
+.diff-page { margin-top: 25px; }
+.diff-page h3 { font-size: 15px; }
+.docs-shell .diff-removed { background: #311a18; }
+.docs-shell .diff-added { background: #17301d; }
+
+@media (max-width: 720px) {
+  .entity-list li { grid-template-columns: 1fr; gap: 7px; }
+  .position-grid { grid-template-columns: repeat(2, 1fr); }
+  .position-grid div:nth-child(2) { border-right: 0; }
+  .position-grid div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .structured-provenance { margin-left: 5px; }
 }

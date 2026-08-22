@@ -64,6 +64,11 @@ export default function HomePage() {
           encodingFormat: "application/yaml",
           contentUrl: `${siteUrl}/openapi.yaml`,
         },
+        {
+          "@type": "DataDownload",
+          encodingFormat: "application/x-ndjson",
+          contentUrl: `${siteUrl}/api/snapshots/documents?format=ndjson`,
+        },
       ],
     },
   ];

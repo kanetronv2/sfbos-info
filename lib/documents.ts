@@ -28,11 +28,16 @@ export interface EvidenceItem {
   startPage: number;
   endPage: number;
   rollCalls: RollCall[];
+  extractionConfidence: number | null;
+  parserVersion: string | null;
 }
 
 export interface DocumentEvidence extends ArchiveDocument {
   pages: EvidencePage[];
   items: EvidenceItem[];
+  versionCount: number;
+  latestVersion: number | null;
+  contentSha256: string | null;
 }
 
 interface DatabaseRow {
@@ -57,6 +62,8 @@ interface ItemRow {
   start_page: number;
   end_page: number;
   roll_calls: RollCall[];
+  extraction_confidence: number | null;
+  parser_version: string | null;
 }
 
 export async function listDocuments(): Promise<ArchiveDocument[]> {
@@ -104,7 +111,7 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
   )) as DatabaseRow[];
   if (!document) return null;
 
-  const [rawPageRows, rawItemRows] = await Promise.all([
+  const [rawPageRows, rawItemRows, rawVersionRows] = await Promise.all([
     sql.query(
       "SELECT page_number, content FROM pages WHERE document_id = $1 ORDER BY page_number",
       [id],
@@ -117,6 +124,8 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
           i.title,
           i.start_page,
           i.end_page,
+          max(es.confidence)::float AS extraction_confidence,
+          max(pr.parser_version) AS parser_version,
           coalesce(
             json_agg(
               json_build_object(
@@ -146,15 +155,25 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
           ) AS roll_calls
         FROM legislative_items i
         LEFT JOIN roll_calls rc ON rc.item_id = i.id
+        LEFT JOIN evidence_spans es
+          ON es.entity_type = 'legislative-item' AND es.entity_id = i.id::text
+        LEFT JOIN parser_runs pr ON pr.id = es.parser_run_id
         WHERE i.document_id = $1
         GROUP BY i.id
         ORDER BY i.ordinal
       `,
       [id],
     ),
+    sql.query(
+      `SELECT count(*)::int AS version_count, max(version_number)::int AS latest_version,
+         (array_agg(content_sha256 ORDER BY version_number DESC))[1] AS content_sha256
+       FROM document_versions WHERE document_id = $1`,
+      [id],
+    ),
   ]);
   const pageRows = rawPageRows as unknown as PageRow[];
   const itemRows = rawItemRows as unknown as ItemRow[];
+  const versionRow = rawVersionRows[0] as { version_count: number; latest_version: number | null; content_sha256: string | null };
 
   return {
     id: document.id,
@@ -173,6 +192,11 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
       startPage: item.start_page,
       endPage: item.end_page,
       rollCalls: item.roll_calls,
+      extractionConfidence: item.extraction_confidence === null ? null : Number(item.extraction_confidence),
+      parserVersion: item.parser_version,
     })),
+    versionCount: versionRow.version_count,
+    latestVersion: versionRow.latest_version,
+    contentSha256: versionRow.content_sha256,
   };
 });

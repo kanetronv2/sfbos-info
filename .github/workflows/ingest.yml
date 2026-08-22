@@ -1,0 +1,39 @@
+name: Ingest new Board records
+
+on:
+  schedule:
+    - cron: "23 13 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sfbos-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install --yes poppler-utils
+      - run: npm ci
+      - name: Download current official agendas and minutes
+        run: ./scripts/download-full-board-meetings.sh
+      - name: Migrate and ingest
+        shell: bash
+        run: |
+          current_year="$(date -u +%Y)"
+          node scripts/migrate.mjs
+          node scripts/ingest.mjs --from-year "${current_year}" --to-year "${current_year}" --refresh
+          node scripts/ingest-items.mjs --from-year "${current_year}" --to-year "${current_year}"
+          node scripts/ingest-comments.mjs --from-year "${current_year}" --to-year "${current_year}"
+          node scripts/sync-structured-records.mjs --from-year "${current_year}" --to-year "${current_year}" --skip-versions --legistar-limit 25

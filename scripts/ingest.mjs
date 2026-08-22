@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -17,6 +18,7 @@ const fromYear = Number(argumentsMap.get("from-year") ?? 2012);
 const toYear = Number(argumentsMap.get("to-year") ?? 2026);
 const documentLimit = Number(argumentsMap.get("limit") ?? Number.POSITIVE_INFINITY);
 const force = argumentsMap.has("force");
+const refresh = argumentsMap.has("refresh");
 const dryRun = argumentsMap.has("dry-run");
 
 if (!dryRun && !process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
@@ -41,12 +43,26 @@ let indexed = 0;
 let skipped = 0;
 
 for (const document of selectedDocuments) {
-  if (!force && await isAlreadyIndexed(document.officialUrl)) {
+  if (!force && !refresh && await isAlreadyIndexed(document.officialUrl)) {
     skipped += 1;
     continue;
   }
 
   const pages = await extractPages(document.absolutePath);
+  const [existingDocument] = await sql.query(
+    "SELECT id::text FROM documents WHERE official_url = $1 LIMIT 1",
+    [document.officialUrl],
+  );
+  const oldPages = existingDocument
+    ? await sql.query("SELECT page_number, content FROM pages WHERE document_id = $1 ORDER BY page_number", [existingDocument.id])
+    : [];
+  if (!force && refresh && oldPages.length && contentHash(oldPages) === contentHash(pages)) {
+    skipped += 1;
+    continue;
+  }
+  if (existingDocument && oldPages.length) {
+    await archiveChangedPages(existingDocument.id, oldPages, pages);
+  }
   const [record] = await sql.query(
     `
       INSERT INTO documents (
@@ -63,6 +79,7 @@ for (const document of selectedDocuments) {
         event_id = EXCLUDED.event_id,
         event_guid = EXCLUDED.event_guid,
         page_count = EXCLUDED.page_count,
+        public_comments_indexed_at = NULL,
         indexed_at = now()
       RETURNING id
     `,
@@ -80,6 +97,8 @@ for (const document of selectedDocuments) {
   );
 
   await sql.query("DELETE FROM pages WHERE document_id = $1", [record.id]);
+  await sql.query("DELETE FROM legislative_items WHERE document_id = $1", [record.id]);
+  await sql.query("DELETE FROM public_comments WHERE document_id = $1", [record.id]);
 
   for (let offset = 0; offset < pages.length; offset += 25) {
     const batch = pages.slice(offset, offset + 25);
@@ -94,9 +113,63 @@ for (const document of selectedDocuments) {
       values,
     );
   }
+  await ensureVersion(String(record.id), pages);
 
   indexed += 1;
   console.log(`[${indexed + skipped}/${selectedDocuments.length}] ${document.localPath} (${pages.length} pages)`);
+}
+
+async function archiveChangedPages(documentId, oldPages, newPages) {
+  const oldVersion = await ensureVersion(documentId, oldPages);
+  if (contentHash(oldPages) === contentHash(newPages)) return;
+  const nextByPage = new Map(newPages.map((page) => [page.pageNumber, page.content]));
+  const changed = oldPages.filter((page) => nextByPage.get(page.page_number) !== page.content).map((page) => ({
+    page_number: page.page_number,
+    content_sha256: sha256(page.content),
+    content: page.content,
+  }));
+  const oldNumbers = new Set(oldPages.map((page) => page.page_number));
+  for (const page of newPages) {
+    if (!oldNumbers.has(page.pageNumber)) changed.push({ page_number: page.pageNumber, content_sha256: "absent", content: "" });
+  }
+  if (!changed.length) return;
+  await sql.query(
+    `INSERT INTO document_version_pages (version_id, page_number, content_sha256, content)
+     SELECT $1, x.page_number, x.content_sha256, x.content
+     FROM jsonb_to_recordset($2::jsonb) AS x(page_number integer, content_sha256 text, content text)
+     ON CONFLICT (version_id, page_number) DO NOTHING`,
+    [oldVersion.id, JSON.stringify(changed)],
+  );
+}
+
+async function ensureVersion(documentId, pages) {
+  const hash = contentHash(pages);
+  let [version] = await sql.query(
+    "SELECT id::text, version_number FROM document_versions WHERE document_id = $1 AND content_sha256 = $2",
+    [documentId, hash],
+  );
+  if (version) return version;
+  [version] = await sql.query(
+    `INSERT INTO document_versions (document_id, version_number, content_sha256, page_count)
+     SELECT $1, coalesce(max(version_number), 0) + 1, $2, $3
+     FROM document_versions WHERE document_id = $1
+     RETURNING id::text, version_number`,
+    [documentId, hash, pages.length],
+  );
+  await sql.query(
+    `INSERT INTO change_log (entity_type, entity_key, change_type, version, payload)
+     VALUES ('document', $1, $2, $3, $4::jsonb)`,
+    [documentId, Number(version.version_number) === 1 ? "create" : "update", String(version.version_number), JSON.stringify({ contentSha256: hash, pageCount: pages.length })],
+  );
+  return version;
+}
+
+function contentHash(pages) {
+  return sha256(pages.map((page) => `${page.pageNumber ?? page.page_number}\n${page.content}`).join("\f"));
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 console.log(`Done. Indexed ${indexed}; skipped ${skipped}.`);

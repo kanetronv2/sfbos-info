@@ -101,8 +101,8 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
         <nav aria-label="Primary navigation">
           <Link href="/">SEARCH</Link>
           <Link href="/documents">PDFS</Link>
+          <Link href="/supervisors">SUPERVISORS</Link>
           <Link href="/api">API</Link>
-          <a href="/llms.txt">FOR MODELS</a>
         </nav>
       </header>
 
@@ -129,6 +129,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
             <a href={documentMarkdownPath(document.id, document.meetingDate, document.kind)}>
               VIEW AS MARKDOWN ↗
             </a>
+            <Link href={`/documents/${document.id}/versions`}>VERSIONS / DIFF ↗</Link>
             <a href="#extracted-text">JUMP TO EXTRACTED TEXT ↓</a>
           </div>
           <p className="evidence-notice">
@@ -156,6 +157,10 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                       {pageRange(item.startPage, item.endPage)}
                     </a>
                   </summary>
+                  <p className="structured-provenance">
+                    Extraction confidence: {item.extractionConfidence === null ? "not scored" : `${Math.round(item.extractionConfidence * 100)}%`}
+                    {item.parserVersion ? ` · parser ${item.parserVersion}` : ""}
+                  </p>
                   {item.rollCalls.length ? (
                     <div className="structured-votes">
                       {item.rollCalls.map((rollCall) => (

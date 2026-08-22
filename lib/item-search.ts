@@ -50,6 +50,8 @@ interface DatabaseRow {
   score: number;
   group_count: number;
   total_count: number;
+  extraction_confidence: number | null;
+  parser_version: string | null;
   roll_calls: DatabaseRollCall[];
 }
 
@@ -132,6 +134,11 @@ export async function searchLegislativeItems(
           d.official_url,
           i.start_page,
           i.end_page,
+          (SELECT max(es.confidence)::float FROM evidence_spans es
+            WHERE es.entity_type = 'legislative-item' AND es.entity_id = i.id::text) AS extraction_confidence,
+          (SELECT max(pr.parser_version) FROM evidence_spans es
+            JOIN parser_runs pr ON pr.id = es.parser_run_id
+            WHERE es.entity_type = 'legislative-item' AND es.entity_id = i.id::text) AS parser_version,
           ts_headline(
             'english',
             i.content,
@@ -170,6 +177,8 @@ export async function searchLegislativeItems(
         matched.official_url,
         matched.start_page,
         matched.end_page,
+        matched.extraction_confidence,
+        matched.parser_version,
         matched.snippet,
         matched.score,
         matched.group_count,
@@ -206,7 +215,8 @@ export async function searchLegislativeItems(
       GROUP BY
         matched.id, matched.document_id, matched.meeting_date, matched.year, matched.file_number, matched.matter,
         matched.title, matched.content, matched.official_url, matched.start_page, matched.end_page,
-        matched.snippet, matched.score, matched.group_count, matched.total_count
+        matched.snippet, matched.score, matched.group_count, matched.total_count,
+        matched.extraction_confidence, matched.parser_version
       ORDER BY matched.score DESC, matched.meeting_date DESC, matched.id
     `,
     params,
@@ -233,6 +243,8 @@ export async function searchLegislativeItems(
     snippet: normalizeWhitespace(row.snippet),
     score: Number(row.score),
     groupCount: row.group_count,
+    extractionConfidence: row.extraction_confidence === null ? null : Number(row.extraction_confidence),
+    parserVersion: row.parser_version,
     extracted: extractItemFacts(row.title, row.content),
     rollCalls: row.roll_calls as RollCall[],
   }));

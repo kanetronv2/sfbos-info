@@ -1,6 +1,7 @@
 import { searchPublicComments } from "./comment-search";
 import { searchLegislativeItems } from "./item-search";
 import { searchDocuments } from "./search";
+import { aggregateHousing } from "./aggregates";
 import type { LegislativeItemResult, RollCall } from "./item-types";
 
 const MIN_YEAR = 2012;
@@ -31,7 +32,7 @@ export async function handleEvidenceQuery(request: Request, forceMarkdown = fals
   }
 
   const interpretation = interpretQuestion(question);
-  const [items, pages, comments] = await Promise.all([
+  const [items, pages, comments, deterministicAggregate] = await Promise.all([
     searchLegislativeItems({
       query: interpretation.searchQuery,
       voter: interpretation.voter,
@@ -58,6 +59,17 @@ export async function handleEvidenceQuery(request: Request, forceMarkdown = fals
           limit: 8,
         })
       : null,
+    interpretation.housingIntent && interpretation.voter
+      ? aggregateHousing({
+          voter: interpretation.voter,
+          position: interpretation.recordedPosition,
+          fromYear: interpretation.fromYear,
+          toYear: interpretation.toYear,
+          finalOnly: interpretation.finalOnly,
+          groupBy: "file",
+          limit: 1000,
+        })
+      : null,
   ]);
 
   const response = {
@@ -74,6 +86,7 @@ export async function handleEvidenceQuery(request: Request, forceMarkdown = fals
     legislativeItems: items,
     pageMatches: pages,
     publicComments: comments,
+    deterministicAggregate,
   };
 
   if (markdown) return new Response(toMarkdown(response), { headers: markdownHeaders() });
@@ -129,6 +142,7 @@ type EvidenceResponse = {
   legislativeItems: Awaited<ReturnType<typeof searchLegislativeItems>>;
   pageMatches: Awaited<ReturnType<typeof searchDocuments>>;
   publicComments: Awaited<ReturnType<typeof searchPublicComments>> | null;
+  deterministicAggregate: Awaited<ReturnType<typeof aggregateHousing>> | null;
 };
 
 function toMarkdown(response: EvidenceResponse) {
@@ -153,6 +167,21 @@ function toMarkdown(response: EvidenceResponse) {
     "## Legislative files and votes",
     "",
   ];
+
+  if (response.deterministicAggregate) {
+    const aggregate = response.deterministicAggregate;
+    lines.push(
+      "## Deterministic housing-unit aggregation",
+      "",
+      `- Selected unit-count total: ${aggregate.aggregation.selectedUnitCountTotal}`,
+      `- Files with a known count: ${aggregate.aggregation.filesWithKnownUnitCount}`,
+      `- Files without a known count: ${aggregate.aggregation.filesWithoutKnownUnitCount}`,
+      `- Addresses: ${aggregate.aggregation.addresses.join("; ") || "none extracted"}`,
+      `- Rule: ${aggregate.aggregation.rule}`,
+      `- Caution: ${aggregate.aggregation.caution}`,
+      "",
+    );
+  }
 
   for (const [index, item] of response.legislativeItems.results.entries()) {
     lines.push(

@@ -12,6 +12,8 @@ export interface SearchResult {
   page: number;
   snippet: string;
   score: number;
+  lexicalScore?: number;
+  semanticScore?: number | null;
 }
 
 export interface SearchResponse {
@@ -24,5 +26,12 @@ export interface SearchResponse {
   total: number;
   returned: number;
   source: "postgres" | "preview";
+  retrieval: {
+    requested: "lexical" | "hybrid";
+    used: "lexical" | "hybrid";
+    embeddingModel: string | null;
+    semanticCoverage: number;
+    fallbackReason: string | null;
+  };
   results: SearchResult[];
 }

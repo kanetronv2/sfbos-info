@@ -31,6 +31,7 @@ npm run db:migrate
 npm run db:ingest
 npm run db:items
 npm run db:comments
+npm run db:sync-structured
 ```
 
 Both database commands load `.env.local` automatically.
@@ -51,6 +52,12 @@ npm run db:ingest -- --from-year 2018 --to-year 2018 --limit 10
 calls. `npm run db:comments` builds a speaker-level index of the clerk's public-comment summaries.
 Both read from Postgres, are resumable, and accept the same year, limit, force, and dry-run options.
 
+`npm run db:sync-structured` reconciles official Legistar identifiers, internal legislative-file
+identifiers, supervisor aliases, and normalized roll-call positions. It also records extraction
+confidence, parser provenance, immutable document versions, and change-feed entries. Use
+`--skip-legistar` for an offline backfill, `--legistar-limit=0` to skip remote matter lookups, or
+`--skip-versions` when only identity reconciliation is needed.
+
 ## API
 
 - `GET /api/query.md?q=How+many+housing+units+has+Connie+Chan+voted+against%3F`
@@ -60,6 +67,11 @@ Both read from Postgres, are resumable, and accept the same year, limit, force, 
 - `GET /api/items.md?q=469+Stevenson&voter=Chan`
 - `GET /api/items.md?q=killer+robots&final=true&groupBy=file`
 - `GET /api/comments.md?q=Great+Highway&from=2021&to=2021`
+- `GET /api/aggregates/votes?voter=Chan&position=no&groupBy=file`
+- `GET /api/aggregates/housing?voter=Chan&position=no`
+- `GET /api/snapshots/recorded-positions?format=ndjson`
+- `GET /api/changes?cursor=0`
+- `POST /api/mcp` (MCP Streamable HTTP, read-only tools)
 - `GET /openapi.yaml`
 - `GET /llms.txt`
 
@@ -74,6 +86,14 @@ Every indexed PDF also has a canonical HTML evidence page at `/documents/{id}/{d
 results link to the matching `#page-{number}` anchor and retain the official PDF as a separate source.
 Every API result also provides a `markdownUrl` for the smallest relevant page range. Append `.md` to
 an evidence-page URL for a complete Markdown transcript, optionally limited with `?pages=5-7`.
+Document version history and page-level diffs are available at `/documents/{id}/versions`.
+Reconciled supervisor profiles are available under `/supervisors`; the site intentionally does not
+publish separate file or project profile pages.
+
+Optional hybrid search uses any OpenAI-compatible embeddings endpoint configured with
+`EMBEDDING_API_URL`, `EMBEDDING_API_TOKEN`, and `EMBEDDING_MODEL`. Populate page embeddings with
+`npm run db:embeddings -- --limit=1000`. If the provider or stored vectors are unavailable,
+`mode=hybrid` deterministically falls back to lexical search and reports the reason.
 
 ## Deploy on Vercel
 
@@ -83,3 +103,8 @@ an evidence-page URL for a complete Markdown transcript, optionally limited with
 4. From a machine containing the downloaded corpus, run `npm run db:migrate`, `npm run db:ingest`, `npm run db:items`, and `npm run db:comments` against the production database.
 
 Pushes to the repository's production branch can then be used for automatic deployments.
+
+The included GitHub Actions workflow checks the official current-meetings archive every day,
+extracts and ingests changed PDFs, reparses items and comments, and runs identifier reconciliation.
+Add the production connection string as a GitHub Actions repository secret named `DATABASE_URL`.
+The ingester archives changed pages before replacement and appends version and change-feed records.

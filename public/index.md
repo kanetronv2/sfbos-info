@@ -20,7 +20,7 @@ Request Markdown with `/api/query.md`, `?format=md`, or `Accept: text/markdown`.
 
 `GET /api/search`
 
-Parameters: `q`, `year`, `kind`, `limit`, `format`.
+Parameters: `q`, `year`, `kind`, `mode`, `limit`, `format`.
 
 Request Markdown with `/api/search.md`, `?format=md`, or `Accept: text/markdown`.
 
@@ -35,5 +35,19 @@ Request Markdown with `/api/items.md`, `?format=md`, or `Accept: text/markdown`.
 Parameters: `q`, `speaker`, `from`, `to`, `limit`, `format`.
 
 Request Markdown with `/api/comments.md`, `?format=md`, or `Accept: text/markdown`.
+
+`GET /api/aggregates/votes`
+
+Parameters: `voter`, `position`, `from`, `to`, `final`, `groupBy`, `limit`.
+
+`GET /api/aggregates/housing`
+
+Parameters: `voter`, `position`, `from`, `to`, `final`, `limit`. The response states its unit-selection rule and interpretation cautions.
+
+Bulk interfaces: `/api/snapshots`, `/api/changes`, and `/api/quality`.
+
+MCP Streamable HTTP: `POST /api/mcp`.
+
+Human-readable reconciled supervisor profiles: `/supervisors`.
 
 Search responses provide `markdownUrl` for a focused Markdown excerpt, `transcriptUrl` for canonical HTML evidence, and `officialUrl` for the authoritative San Francisco government PDF. Document transcripts accept page ranges of up to 50 pages using `?pages=5-7`.

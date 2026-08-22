@@ -21,6 +21,12 @@ https://sfbos.info/api/query.md?q=How+many+housing+units+has+Connie+Chan+voted+a
 
 Use the specialized endpoints below when you need explicit filters or exhaustive follow-up searches.
 
+For tool-capable clients, a stateless MCP Streamable HTTP endpoint is available at:
+
+- https://sfbos.info/api/mcp
+
+It exposes read-only search, document evidence, deterministic aggregation, and change-feed tools.
+
 ## Specialized search
 
 Use legislative-item search for questions about votes, files, outcomes, or named supervisors:
@@ -63,6 +69,7 @@ Use page search for broad discovery and passages outside legislative-file blocks
 - Filter by year: add `&year=2018`
 - Filter by document: add `&kind=minutes` or `&kind=agenda`
 - Limit results: add `&limit=50`
+- Optional hybrid reranking: add `&mode=hybrid`. The response always reports whether hybrid retrieval was used or fell back to lexical search.
 
 Example:
 https://sfbos.info/api/search.md?q=housing+vote&year=2018&kind=minutes&limit=50
@@ -73,6 +80,12 @@ votes or findings, and cite both the page-addressable evidence and official docu
 
 Documentation:
 - https://sfbos.info/documents (complete PDF archive)
+- https://sfbos.info/supervisors (reconciled supervisor profiles)
+- https://sfbos.info/api/aggregates/votes?voter=Chan&position=no
+- https://sfbos.info/api/aggregates/housing?voter=Chan&position=no
+- https://sfbos.info/api/snapshots (bulk JSON and NDJSON)
+- https://sfbos.info/api/changes (append-only change feed)
+- https://sfbos.info/quality (data-quality dashboard)
 - https://sfbos.info/api
 - https://sfbos.info/openapi.yaml
 - https://sfbos.info/index.md

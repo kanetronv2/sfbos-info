@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: SF BOS Search API
-  version: 1.5.0
-  description: Provider-neutral evidence retrieval, page-level search, and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
+  version: 2.0.0
+  description: Provider-neutral evidence retrieval, deterministic aggregation, snapshots, and change feeds over San Francisco Board of Supervisors records.
 externalDocs:
   description: Model and agent access guide
   url: https://sfbos.info/llms.txt
@@ -49,6 +49,10 @@ paths:
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: mode
+          in: query
+          description: Hybrid reranking is used only when a provider-neutral embedding endpoint and page embeddings are configured; otherwise the response reports a lexical fallback.
+          schema: { type: string, enum: [lexical, hybrid], default: lexical }
         - name: format
           in: query
           schema: { type: string, enum: [json, md] }
@@ -142,6 +146,68 @@ paths:
                 $ref: "#/components/schemas/CommentSearchResponse"
             text/markdown:
               schema: { type: string }
+  /api/aggregates/votes:
+    get:
+      operationId: aggregateRecordedVotes
+      summary: Deterministically aggregate a supervisor's recorded positions
+      description: Counts positions on their attached actions. It does not infer a stance on the underlying matter.
+      parameters:
+        - { name: voter, in: query, required: true, schema: { type: string } }
+        - { name: position, in: query, schema: { type: string, enum: [aye, no, absent, excused] } }
+        - { name: from, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: to, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: final, in: query, schema: { type: boolean, default: false } }
+        - { name: groupBy, in: query, schema: { type: string, enum: [file, roll-call], default: file } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
+      responses:
+        "200": { description: Reconciled recorded positions and page-addressable evidence. }
+  /api/aggregates/housing:
+    get:
+      operationId: aggregateHousingUnitMentions
+      summary: Aggregate housing-related actions and extracted unit mentions
+      description: Uses one most-recent matching action per file and an explicit maximum-unit-mention rule. The response includes cautions and source evidence.
+      parameters:
+        - { name: voter, in: query, required: true, schema: { type: string } }
+        - { name: position, in: query, schema: { type: string, enum: [aye, no, absent, excused] } }
+        - { name: from, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: to, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: final, in: query, schema: { type: boolean, default: false } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
+      responses:
+        "200": { description: Housing-unit mentions, addresses, deterministic totals, and citations. }
+  /api/snapshots:
+    get:
+      operationId: listSnapshots
+      summary: List versioned bulk snapshot feeds
+      responses:
+        "200": { description: Snapshot manifest. }
+  /api/snapshots/{entity}:
+    get:
+      operationId: readSnapshot
+      summary: Read a cursor-paginated JSON or NDJSON snapshot
+      parameters:
+        - { name: entity, in: path, required: true, schema: { type: string, enum: [documents, supervisors, recorded-positions, legislative-files] } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 1000 } }
+        - { name: format, in: query, schema: { type: string, enum: [json, ndjson], default: json } }
+      responses:
+        "200": { description: A stable-schema snapshot page. }
+  /api/changes:
+    get:
+      operationId: readChangeFeed
+      summary: Read the append-only entity change feed
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 250 } }
+      responses:
+        "200": { description: Ordered entity changes and the next cursor. }
+  /api/quality:
+    get:
+      operationId: readDataQuality
+      summary: Read coverage, provenance, and reconciliation metrics
+      responses:
+        "200": { description: Current data-quality report. }
 components:
   schemas:
     EvidenceQueryResponse:
@@ -171,7 +237,7 @@ components:
             - { type: "null" }
     SearchResponse:
       type: object
-      required: [query, interpretedQueries, filters, total, returned, source, results]
+      required: [query, interpretedQueries, filters, total, returned, source, retrieval, results]
       properties:
         query: { type: string }
         interpretedQueries: { type: array, items: { type: string } }
@@ -179,6 +245,15 @@ components:
         total: { type: integer }
         returned: { type: integer }
         source: { type: string, enum: [postgres, preview] }
+        retrieval:
+          type: object
+          required: [requested, used, embeddingModel, semanticCoverage, fallbackReason]
+          properties:
+            requested: { type: string, enum: [lexical, hybrid] }
+            used: { type: string, enum: [lexical, hybrid] }
+            embeddingModel: { type: [string, "null"] }
+            semanticCoverage: { type: number, minimum: 0, maximum: 1 }
+            fallbackReason: { type: [string, "null"] }
         results:
           type: array
           items:

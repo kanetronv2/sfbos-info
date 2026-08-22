@@ -68,6 +68,31 @@ const cases = [
     path: "/api/items?q=Family+Zoning+Plan&from=2025&to=2025&final=true&groupBy=matter",
     test: (body) => body.total === 1 && body.results[0]?.groupCount >= 3,
   },
+  {
+    name: "deterministic supervisor aggregation",
+    path: "/api/aggregates/votes?voter=Chan&position=no&from=2021&to=2026&groupBy=file&limit=5",
+    test: (body) => body.voter?.slug === "connie-chan" && body.total > 0 && body.results.every((result) => result.recordedPosition === "no" && result.transcriptUrl.includes("#page-")),
+  },
+  {
+    name: "hybrid search explicit fallback",
+    path: "/api/search?q=affordable+housing&mode=hybrid&limit=2",
+    test: (body) => body.retrieval?.requested === "hybrid" && ["hybrid", "lexical"].includes(body.retrieval?.used),
+  },
+  {
+    name: "recorded-position snapshot",
+    path: "/api/snapshots/recorded-positions?limit=2",
+    test: (body) => body.schemaVersion === "1.0.0" && body.records?.length === 2 && body.records[0]?.documentId,
+  },
+  {
+    name: "change feed",
+    path: "/api/changes?cursor=0&limit=2",
+    test: (body) => body.schemaVersion === "1.0.0" && body.changes?.length > 0,
+  },
+  {
+    name: "data-quality coverage",
+    path: "/api/quality",
+    test: (body) => body.metrics?.documents === 1149 && body.metrics?.documents_without_versions === 0,
+  },
 ];
 
 let failures = 0;
@@ -81,6 +106,16 @@ for (const check of cases) {
     console.error(JSON.stringify(body, null, 2).slice(0, 3000));
   }
 }
+
+const mcpResponse = await fetch(`${baseUrl}/api/mcp`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "MCP-Protocol-Version": "2025-06-18" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+});
+const mcp = await mcpResponse.json();
+const mcpPassed = mcpResponse.ok && mcp.result?.tools?.some((tool) => tool.name === "aggregate_recorded_votes");
+console.log(`${mcpPassed ? "PASS" : "FAIL"}  MCP tool discovery`);
+if (!mcpPassed) failures += 1;
 
 if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);

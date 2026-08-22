@@ -53,6 +53,8 @@ export interface LegislativeItemResult {
   snippet: string;
   score: number;
   groupCount: number;
+  extractionConfidence: number | null;
+  parserVersion: string | null;
   extracted: ExtractedFacts;
   rollCalls: RollCall[];
 }

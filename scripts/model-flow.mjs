@@ -15,6 +15,8 @@ assert(queryResponse.ok, `evidence query returned ${queryResponse.status}`);
 assert(evidence.interpretation?.voter === "Chan", "evidence query did not infer Chan");
 assert(evidence.interpretation?.recordedPosition === "no", "evidence query did not infer a recorded No position");
 assert(evidence.legislativeItems?.results?.length > 0, "evidence query returned no legislative files");
+assert(evidence.deterministicAggregate?.aggregation?.rule, "evidence query returned no deterministic aggregation rule");
+assert(Array.isArray(evidence.deterministicAggregate?.aggregation?.addresses), "evidence query returned no aggregate address list");
 
 const firstResult = evidence.legislativeItems.results[0];
 assert(firstResult.transcriptUrl?.includes("/documents/"), "evidence result has no HTML transcript URL");

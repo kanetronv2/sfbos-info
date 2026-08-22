@@ -11,6 +11,8 @@
     "db:ingest": "node --env-file=.env.local scripts/ingest.mjs",
     "db:items": "node --env-file=.env.local scripts/ingest-items.mjs",
     "db:comments": "node --env-file=.env.local scripts/ingest-comments.mjs",
+    "db:sync-structured": "node --env-file=.env.local scripts/sync-structured-records.mjs",
+    "db:embeddings": "node --env-file=.env.local scripts/embed-pages.mjs",
     "test:infra": "node scripts/smoke.mjs",
     "test:model-flow": "node scripts/model-flow.mjs"
   },

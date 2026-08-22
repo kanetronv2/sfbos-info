@@ -56,6 +56,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link rel="describedby" href="/llms.txt" />
         <link rel="service-desc" type="application/yaml" href="/openapi.yaml" />
+        <link rel="alternate" type="application/json" href="/api/mcp" title="MCP endpoint" />
       </head>
       <body>{children}</body>
     </html>

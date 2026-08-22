@@ -3,6 +3,7 @@ import { previewResults } from "./demo-data";
 import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
 import { displayDocumentTitle } from "./document-title";
 import { expandQuery } from "./query-expansion";
+import { rerankWithEmbeddings } from "./embeddings";
 import type { DocumentKind, SearchResponse, SearchResult } from "./types";
 
 interface SearchOptions {
@@ -10,6 +11,7 @@ interface SearchOptions {
   year: number | null;
   kind: DocumentKind | null;
   limit: number;
+  mode?: "lexical" | "hybrid";
 }
 
 interface DatabaseRow {
@@ -49,7 +51,9 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     filters.push(`d.kind = $${params.length}`);
   }
 
-  params.push(options.limit);
+  const mode = options.mode ?? "lexical";
+  const candidateLimit = mode === "hybrid" ? Math.min(200, Math.max(50, options.limit * 4)) : options.limit;
+  params.push(candidateLimit);
   const limitPosition = params.length;
   const rows = (await sql.query(
     `
@@ -78,7 +82,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     params,
   )) as DatabaseRow[];
 
-  const results: SearchResult[] = rows.map((row) => ({
+  const lexicalResults: SearchResult[] = rows.map((row) => ({
     id: `${row.document_id}-${row.page_number}`,
     meetingDate: row.meeting_date,
     year: row.year,
@@ -92,14 +96,24 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     score: Number(row.score),
   }));
 
+  const hybrid = mode === "hybrid"
+    ? await rerankWithEmbeddings(options.query, lexicalResults, options.limit)
+    : { results: lexicalResults.slice(0, options.limit), model: null, coverage: 0, fallbackReason: null };
   return {
     query: options.query,
     interpretedQueries: expanded.interpreted,
     filters: { year: options.year, kind: options.kind },
     total: rows[0]?.total_count ?? 0,
-    returned: results.length,
+    returned: hybrid.results.length,
     source: "postgres",
-    results,
+    retrieval: {
+      requested: mode,
+      used: mode === "hybrid" && !hybrid.fallbackReason ? "hybrid" : "lexical",
+      embeddingModel: hybrid.model,
+      semanticCoverage: hybrid.coverage,
+      fallbackReason: hybrid.fallbackReason,
+    },
+    results: hybrid.results,
   };
 }
 
@@ -126,6 +140,13 @@ function searchPreview(options: SearchOptions): SearchResponse {
     total: results.length,
     returned: results.length,
     source: "preview",
+    retrieval: {
+      requested: options.mode ?? "lexical",
+      used: "lexical",
+      embeddingModel: null,
+      semanticCoverage: 0,
+      fallbackReason: options.mode === "hybrid" ? "Preview index does not include embeddings" : null,
+    },
     results,
   };
 }

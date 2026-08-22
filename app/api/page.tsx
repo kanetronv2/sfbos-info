@@ -50,7 +50,7 @@ export default function ApiPage() {
     <div className="docs-shell">
       <header className="docs-header">
         <Link href="/" className="wordmark"><span className="prompt-mark">&gt;_</span> sfbos.info</Link>
-        <span>API / v1</span>
+        <span>API / v2</span>
       </header>
       <main>
         <p className="docs-kicker">PUBLIC · READ-ONLY · CORS ENABLED</p>
@@ -76,11 +76,41 @@ export default function ApiPage() {
             <code>year</code><p>Optional. Calendar year from 2012 through 2026.</p>
             <code>kind</code><p>Optional. <code>agenda</code> or <code>minutes</code>.</p>
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
+            <code>mode</code><p>Optional. <code>lexical</code> or <code>hybrid</code>. Hybrid reports a lexical fallback when embeddings are unavailable.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
           <p>
             Every result includes a canonical <code>transcriptUrl</code> with a page anchor and a
             separate <code>officialUrl</code> for the authoritative City PDF.
+          </p>
+        </section>
+
+        <section>
+          <h2><code>GET /api/aggregates/*</code></h2>
+          <p>
+            Deterministic, action-aware aggregation over reconciled supervisor identities. Use
+            <code> /api/aggregates/votes</code> for recorded positions and
+            <code> /api/aggregates/housing</code> for unit mentions and addresses. Each response
+            states its grouping rule and interpretation limits.
+          </p>
+          <pre><code>{`GET /api/aggregates/housing?voter=Chan&position=no&from=2021&to=2026`}</code></pre>
+        </section>
+
+        <section>
+          <h2>Bulk data and changes</h2>
+          <p>
+            <code>/api/snapshots</code> lists cursor-paginated JSON and NDJSON feeds.
+            <code> /api/changes</code> is an append-only change feed. Both publish a schema version.
+          </p>
+          <pre><code>{`GET /api/snapshots/recorded-positions?format=ndjson&limit=1000
+GET /api/changes?cursor=0&limit=250`}</code></pre>
+        </section>
+
+        <section>
+          <h2><code>POST /api/mcp</code></h2>
+          <p>
+            Stateless MCP Streamable HTTP endpoint with provider-neutral, read-only tools for search,
+            document evidence, aggregation, and the change feed.
           </p>
         </section>
 
@@ -142,6 +172,9 @@ export default function ApiPage() {
           <h2>Discovery</h2>
           <ul>
             <li><Link href="/documents">/documents: complete PDF archive</Link></li>
+            <li><Link href="/supervisors">/supervisors: reconciled recorded-position profiles</Link></li>
+            <li><Link href="/quality">/quality: coverage and parser health</Link></li>
+            <li><Link href="/api/snapshots">/api/snapshots</Link></li>
             <li><a href="/llms.txt">/llms.txt</a></li>
             <li><a href="/openapi.yaml">/openapi.yaml</a></li>
             <li><a href="/index.md">/index.md</a></li>
