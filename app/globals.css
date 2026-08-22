@@ -148,8 +148,15 @@ h1 {
 .model-callout p code { color: var(--ink); font: 11px var(--mono); }
 .model-callout a { font: 700 9px var(--mono); letter-spacing: .1em; text-underline-offset: 3px; }
 .example-prompt { display: grid; align-content: start; gap: 11px; padding: 18px; border: 1px solid var(--line); background: var(--ink); color: var(--paper); }
-.example-prompt span { color: #a7a99f; font: 8px var(--mono); letter-spacing: .14em; }
+.example-prompt-header { min-height: 30px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.example-prompt-label { color: #a7a99f; font: 8px var(--mono); letter-spacing: .14em; }
 .example-prompt code { font: 11px/1.65 var(--mono); }
+.copy-prompt-control { display: flex; align-items: center; gap: 8px; }
+.copy-prompt-status { color: #a7a99f; font: 8px var(--mono); letter-spacing: .12em; }
+.copy-prompt-button { width: 30px; height: 30px; padding: 6px; display: grid; place-items: center; border: 1px solid #555850; background: transparent; color: var(--paper); cursor: pointer; }
+.copy-prompt-button:hover { border-color: var(--paper); background: #30312d; }
+.copy-prompt-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.copy-prompt-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: square; stroke-linejoin: miter; stroke-width: 1.7; }
 
 .examples { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .examples > span { margin-right: 5px; color: var(--muted); font: 9px var(--mono); letter-spacing: .15em; }
