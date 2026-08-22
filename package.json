@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "db:migrate": "node scripts/migrate.mjs",
-    "db:ingest": "node scripts/ingest.mjs"
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "db:ingest": "node --env-file=.env.local scripts/ingest.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

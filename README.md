@@ -31,6 +31,8 @@ npm run db:migrate
 npm run db:ingest
 ```
 
+Both database commands load `.env.local` automatically.
+
 Audit all local files and their official-source URL mapping without connecting to a database:
 
 ```bash
