@@ -93,8 +93,8 @@ export function SearchApp({
         </Link>
         <nav aria-label="Primary navigation">
           <Link href="/api">API</Link>
-          <a href="/llms.txt">LLMs</a>
-          <a href="/openapi.yaml">OpenAPI</a>
+          <a href="/llms.txt">FOR MODELS</a>
+          <a href="/openapi.yaml">SCHEMA</a>
         </nav>
       </header>
 

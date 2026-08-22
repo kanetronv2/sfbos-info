@@ -90,10 +90,10 @@ export default function ApiPage() {
         </section>
 
         <section>
-          <h2>Markdown for LLMs</h2>
+          <h2>Markdown for any model</h2>
           <pre><code>{markdownExample}</code></pre>
           <p>
-            Markdown can also be requested from <code>/api/search</code> using
+            The interface is provider-neutral. Markdown can also be requested from <code>/api/search</code> using
             <code> Accept: text/markdown</code> or <code>?format=md</code>.
           </p>
         </section>

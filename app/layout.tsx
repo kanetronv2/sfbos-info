@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s · SF BOS Search",
   },
   description:
-    "Search agendas and minutes from the San Francisco Board of Supervisors, with official source links and an LLM-friendly API.",
+    "Search agendas and minutes from the San Francisco Board of Supervisors, with official source links and a provider-neutral machine-readable API.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",

@@ -2,6 +2,9 @@
 
 > Full-text search across San Francisco Board of Supervisors agendas and minutes from 2012 onward. Results link to official City source PDFs.
 
+This is a provider-neutral interface. The same Markdown and JSON endpoints are intended for any
+language model, agent, search engine, researcher, or application without preferential treatment.
+
 Use legislative-item search for questions about votes, files, outcomes, or named supervisors:
 
 - Item search: https://sfbos.info/api/items.md?q={URL_ENCODED_QUERY}
