@@ -8,6 +8,8 @@ Use legislative-item search for questions about votes, files, outcomes, or named
 - Filter by recorded voter: add `&voter=Chan`
 - Filter by recorded position: add `&position=aye` or `&position=no`
 - Filter by inclusive years: add `&from=2021&to=2026`
+- Restrict to final actions: add `&final=true`
+- Collapse repeated records: add `&groupBy=file` or `&groupBy=matter`
 - Limit results: add `&limit=50`
 
 Housing-vote research example:
@@ -17,6 +19,18 @@ Item results keep terms within the same legislative matter and return structured
 the action immediately preceding each vote. Never treat Aye as support or No as opposition without
 reading that action. An Aye on a motion to disapprove opposes the underlying project; an Aye on a
 motion to table that disapproval supports it.
+
+Item responses also identify action types and likely final actions, and extract monetary amounts,
+housing-unit counts, and agreement parties. These are deterministic aids; verify them against the
+returned title and official minutes before calculating totals.
+
+Use speaker-level search for public comment:
+
+- Comments: https://sfbos.info/api/comments.md?q={URL_ENCODED_QUERY}
+- Filter by speaker: add `&speaker={NAME}`
+- Filter by inclusive years: add `&from=2021&to=2021`
+
+These are clerk-written summaries, not verbatim transcripts.
 
 Use page search for broad discovery and passages outside legislative-file blocks:
 

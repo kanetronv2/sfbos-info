@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SF BOS Search API
-  version: 1.1.0
+  version: 1.2.0
   description: Page-level and legislative-item search over San Francisco Board of Supervisors agendas and minutes.
 servers:
   - url: https://sfbos.info
@@ -54,6 +54,14 @@ paths:
           in: query
           description: Recorded position. Requires voter. This is not an inferred stance on the underlying matter.
           schema: { type: string, enum: [aye, no, absent, excused] }
+        - name: final
+          in: query
+          description: Restrict results to records with a roll call classified as a final action.
+          schema: { type: boolean, default: false }
+        - name: groupBy
+          in: query
+          description: Collapse repeated meetings by legislative file or normalized matter.
+          schema: { type: string, enum: [none, file, matter], default: none }
         - name: from
           in: query
           schema: { type: integer, minimum: 2012, maximum: 2026, default: 2012 }
@@ -75,13 +83,48 @@ paths:
                 $ref: "#/components/schemas/ItemSearchResponse"
             text/markdown:
               schema: { type: string }
+  /api/comments:
+    get:
+      operationId: searchPublicComments
+      summary: Search individual public-comment summaries
+      description: Searches speaker-level, clerk-written summaries parsed from official meeting minutes. These are not verbatim transcripts.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 300 }
+        - name: speaker
+          in: query
+          schema: { type: string, maxLength: 80 }
+        - name: from
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2012 }
+        - name: to
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2026 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, md] }
+      responses:
+        "200":
+          description: Matching speaker statements from official minutes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentSearchResponse"
+            text/markdown:
+              schema: { type: string }
 components:
   schemas:
     SearchResponse:
       type: object
-      required: [query, filters, total, returned, source, results]
+      required: [query, interpretedQueries, filters, total, returned, source, results]
       properties:
         query: { type: string }
+        interpretedQueries: { type: array, items: { type: string } }
         filters: { type: object }
         total: { type: integer }
         returned: { type: integer }
@@ -103,19 +146,22 @@ components:
               score: { type: number }
     RollCall:
       type: object
-      required: [sequence, action, ayes, noes, absent, excused]
+      required: [sequence, action, actionType, isFinal, ayes, noes, absent, excused]
       properties:
         sequence: { type: integer }
         action: { type: string }
+        actionType: { type: string, enum: [final-passage, first-reading, adoption, approval, amendment, continuance, referral, tabling, rejection, rescission, other] }
+        isFinal: { type: boolean }
         ayes: { type: array, items: { type: string } }
         noes: { type: array, items: { type: string } }
         absent: { type: array, items: { type: string } }
         excused: { type: array, items: { type: string } }
     ItemSearchResponse:
       type: object
-      required: [query, filters, total, returned, results]
+      required: [query, interpretedQueries, filters, total, returned, results]
       properties:
         query: { type: string }
+        interpretedQueries: { type: array, items: { type: string } }
         filters: { type: object }
         total: { type: integer }
         returned: { type: integer }
@@ -123,18 +169,59 @@ components:
           type: array
           items:
             type: object
-            required: [id, meetingDate, year, fileNumber, title, officialUrl, startPage, endPage, snippet, score, rollCalls]
+            required: [id, meetingDate, year, fileNumber, matter, title, officialUrl, startPage, endPage, snippet, score, groupCount, extracted, rollCalls]
             properties:
               id: { type: string }
               meetingDate: { type: string, format: date }
               year: { type: integer }
               fileNumber: { type: string }
+              matter: { type: string }
               title: { type: string }
               officialUrl: { type: string, format: uri }
               startPage: { type: integer }
               endPage: { type: integer }
               snippet: { type: string }
               score: { type: number }
+              groupCount: { type: integer }
+              extracted:
+                type: object
+                required: [amounts, housingUnits, parties]
+                properties:
+                  amounts:
+                    type: array
+                    items:
+                      type: object
+                      required: [raw, value, currency, qualifier]
+                      properties:
+                        raw: { type: string }
+                        value: { type: integer }
+                        currency: { type: string, const: USD }
+                        qualifier: { type: string, enum: [not-to-exceed, increase, decrease, appropriation, revenue, stated] }
+                  housingUnits: { type: array, items: { type: integer } }
+                  parties: { type: array, items: { type: string } }
               rollCalls:
                 type: array
                 items: { $ref: "#/components/schemas/RollCall" }
+    CommentSearchResponse:
+      type: object
+      required: [query, interpretedQueries, filters, total, returned, results]
+      properties:
+        query: { type: string }
+        interpretedQueries: { type: array, items: { type: string } }
+        filters: { type: object }
+        total: { type: integer }
+        returned: { type: integer }
+        results:
+          type: array
+          items:
+            type: object
+            required: [id, meetingDate, year, speaker, statement, officialUrl, page, score]
+            properties:
+              id: { type: string }
+              meetingDate: { type: string, format: date }
+              year: { type: integer }
+              speaker: { type: string }
+              statement: { type: string }
+              officialUrl: { type: string, format: uri }
+              page: { type: integer }
+              score: { type: number }

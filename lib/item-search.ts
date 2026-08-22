@@ -1,5 +1,9 @@
 import { neon } from "@neondatabase/serverless";
+import { extractItemFacts } from "./item-extraction";
+import { expandQuery } from "./query-expansion";
 import type {
+  ActionType,
+  GroupBy,
   LegislativeItemResponse,
   LegislativeItemResult,
   RollCall,
@@ -11,9 +15,22 @@ interface ItemSearchOptions {
   voter: string | null;
   voterKey: string | null;
   position: VotePosition | null;
+  final: boolean;
+  groupBy: GroupBy;
   fromYear: number;
   toYear: number;
   limit: number;
+}
+
+interface DatabaseRollCall {
+  sequence: number;
+  action: string;
+  actionType: ActionType;
+  isFinal: boolean;
+  ayes: string[];
+  noes: string[];
+  absent: string[];
+  excused: string[];
 }
 
 interface DatabaseRow {
@@ -21,14 +38,17 @@ interface DatabaseRow {
   meeting_date: string;
   year: number;
   file_number: string;
+  matter: string;
   title: string;
+  content: string;
   official_url: string;
   start_page: number;
   end_page: number;
   snippet: string;
   score: number;
+  group_count: number;
   total_count: number;
-  roll_calls: RollCall[];
+  roll_calls: DatabaseRollCall[];
 }
 
 const positionColumns: Record<VotePosition, string> = {
@@ -41,9 +61,11 @@ const positionColumns: Record<VotePosition, string> = {
 export async function searchLegislativeItems(
   options: ItemSearchOptions,
 ): Promise<LegislativeItemResponse> {
+  const expanded = expandQuery(options.query);
   if (!process.env.DATABASE_URL) {
     return {
       query: options.query,
+      interpretedQueries: expanded.interpreted,
       filters: publicFilters(options),
       total: 0,
       returned: 0,
@@ -52,54 +74,85 @@ export async function searchLegislativeItems(
   }
 
   const sql = neon(process.env.DATABASE_URL);
-  const params: Array<string | number> = [options.query, options.fromYear, options.toYear];
+  const queryVariants = expanded.searchQueries;
+  const params: Array<string | number> = [...queryVariants];
+  const queryExpression = queryVariants
+    .map((_, index) => `websearch_to_tsquery('english', $${index + 1})`)
+    .join(" || ");
+
+  params.push(options.fromYear, options.toYear);
+  const fromPosition = queryVariants.length + 1;
+  const toPosition = queryVariants.length + 2;
   const filters = [
-    "i.search_vector @@ websearch_to_tsquery('english', $1)",
-    "d.year BETWEEN $2 AND $3",
+    `i.direct_search_vector @@ (${queryExpression})`,
+    `d.year BETWEEN $${fromPosition} AND $${toPosition}`,
   ];
 
-  if (options.voterKey) {
-    params.push(options.voterKey.toLowerCase());
-    const voterPosition = params.length;
-    const arrays = options.position
-      ? `rc.${positionColumns[options.position]}`
-      : "rc.ayes || rc.noes || rc.absent || rc.excused";
-    filters.push(`
-      EXISTS (
-        SELECT 1
-        FROM roll_calls rc
-        CROSS JOIN LATERAL unnest(${arrays}) AS recorded_name
-        WHERE rc.item_id = i.id AND lower(recorded_name) = $${voterPosition}
-      )
-    `);
+  if (options.voterKey || options.final) {
+    const rollCallFilters: string[] = ["rc.item_id = i.id"];
+    if (options.final) {
+      rollCallFilters.push(`rc.action !~ 'FIRST READING' AND rc.action ~ '(FINALLY PASSED|\\mADOPTED\\M|\\mAPPROVED\\M)'`);
+    }
+    if (options.voterKey) {
+      params.push(options.voterKey.toLowerCase());
+      const voterPosition = params.length;
+      const arrays = options.position
+        ? `rc.${positionColumns[options.position]}`
+        : "rc.ayes || rc.noes || rc.absent || rc.excused";
+      rollCallFilters.push(`EXISTS (
+        SELECT 1 FROM unnest(${arrays}) AS recorded_name
+        WHERE lower(recorded_name) = $${voterPosition}
+      )`);
+    }
+    filters.push(`EXISTS (SELECT 1 FROM roll_calls rc WHERE ${rollCallFilters.join(" AND ")})`);
   }
+
+  const groupExpression = {
+    none: "i.id::text",
+    file: "i.file_number",
+    matter: "i.matter",
+  }[options.groupBy];
 
   params.push(options.limit);
   const limitPosition = params.length;
   const rows = (await sql.query(
     `
-      WITH matched AS (
+      WITH candidates AS (
         SELECT
           i.id,
           d.meeting_date,
           d.year,
           i.file_number,
+          i.matter,
           i.title,
+          i.content,
           d.official_url,
           i.start_page,
           i.end_page,
           ts_headline(
             'english',
-            i.content || E'\n' || i.context,
-            websearch_to_tsquery('english', $1),
+            i.content,
+            (${queryExpression}),
             'StartSel=, StopSel=, MaxWords=80, MinWords=30, ShortWord=2, MaxFragments=2, FragmentDelimiter= … '
           ) AS snippet,
-          ts_rank_cd(i.search_vector, websearch_to_tsquery('english', $1), 32)::float AS score,
-          count(*) OVER()::int AS total_count
+          ts_rank_cd(i.direct_search_vector, (${queryExpression}), 32)::float AS score,
+          row_number() OVER (
+            PARTITION BY ${groupExpression}
+            ORDER BY d.meeting_date DESC, i.ordinal DESC
+          ) AS group_rank,
+          count(*) OVER (PARTITION BY ${groupExpression})::int AS group_count
         FROM legislative_items i
         JOIN documents d ON d.id = i.document_id
         WHERE ${filters.join(" AND ")}
-        ORDER BY score DESC, d.meeting_date DESC, i.ordinal
+      ),
+      grouped AS (
+        SELECT candidates.*, count(*) OVER()::int AS total_count
+        FROM candidates
+        WHERE group_rank = 1
+      ),
+      matched AS (
+        SELECT * FROM grouped
+        ORDER BY score DESC, meeting_date DESC, id
         LIMIT $${limitPosition}
       )
       SELECT
@@ -107,18 +160,35 @@ export async function searchLegislativeItems(
         matched.meeting_date::text,
         matched.year,
         matched.file_number,
+        matched.matter,
         matched.title,
+        matched.content,
         matched.official_url,
         matched.start_page,
         matched.end_page,
         matched.snippet,
         matched.score,
+        matched.group_count,
         matched.total_count,
         coalesce(
           json_agg(
             json_build_object(
               'sequence', rc.sequence,
               'action', rc.action,
+              'actionType', CASE
+                WHEN rc.action ~ 'FINALLY PASSED' THEN 'final-passage'
+                WHEN rc.action ~ 'FIRST READING' THEN 'first-reading'
+                WHEN rc.action ~ '\\mADOPTED\\M' THEN 'adoption'
+                WHEN rc.action ~ '\\mAPPROVED\\M' THEN 'approval'
+                WHEN rc.action ~* '\\mRESCIND' THEN 'rescission'
+                WHEN rc.action ~* '\\mCONTINU' THEN 'continuance'
+                WHEN rc.action ~* '\\mAMEND' THEN 'amendment'
+                WHEN rc.action ~* '\\mREFER' THEN 'referral'
+                WHEN rc.action ~* '\\mTABL' THEN 'tabling'
+                WHEN rc.action ~* '\\m(REJECT|FAIL|DENI)' THEN 'rejection'
+                ELSE 'other'
+              END,
+              'isFinal', rc.action !~ 'FIRST READING' AND rc.action ~ '(FINALLY PASSED|\\mADOPTED\\M|\\mAPPROVED\\M)',
               'ayes', rc.ayes,
               'noes', rc.noes,
               'absent', rc.absent,
@@ -130,9 +200,9 @@ export async function searchLegislativeItems(
       FROM matched
       LEFT JOIN roll_calls rc ON rc.item_id = matched.id
       GROUP BY
-        matched.id, matched.meeting_date, matched.year, matched.file_number,
-        matched.title, matched.official_url, matched.start_page, matched.end_page,
-        matched.snippet, matched.score, matched.total_count
+        matched.id, matched.meeting_date, matched.year, matched.file_number, matched.matter,
+        matched.title, matched.content, matched.official_url, matched.start_page, matched.end_page,
+        matched.snippet, matched.score, matched.group_count, matched.total_count
       ORDER BY matched.score DESC, matched.meeting_date DESC, matched.id
     `,
     params,
@@ -143,17 +213,21 @@ export async function searchLegislativeItems(
     meetingDate: row.meeting_date,
     year: row.year,
     fileNumber: row.file_number,
+    matter: row.matter,
     title: row.title,
     officialUrl: row.official_url,
     startPage: row.start_page,
     endPage: row.end_page,
     snippet: normalizeWhitespace(row.snippet),
     score: Number(row.score),
-    rollCalls: row.roll_calls,
+    groupCount: row.group_count,
+    extracted: extractItemFacts(row.title, row.content),
+    rollCalls: row.roll_calls as RollCall[],
   }));
 
   return {
     query: options.query,
+    interpretedQueries: expanded.interpreted,
     filters: publicFilters(options),
     total: rows[0]?.total_count ?? 0,
     returned: results.length,
@@ -165,6 +239,8 @@ function publicFilters(options: ItemSearchOptions) {
   return {
     voter: options.voter,
     position: options.position,
+    final: options.final,
+    groupBy: options.groupBy,
     fromYear: options.fromYear,
     toYear: options.toYear,
   };

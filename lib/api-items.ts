@@ -1,5 +1,5 @@
 import { searchLegislativeItems } from "./item-search";
-import type { LegislativeItemResponse, RollCall, VotePosition } from "./item-types";
+import type { GroupBy, LegislativeItemResponse, RollCall, VotePosition } from "./item-types";
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 300;
@@ -13,6 +13,8 @@ export async function handleItemSearch(request: Request, forceMarkdown = false) 
   const query = (url.searchParams.get("q") ?? "").trim();
   const voter = (url.searchParams.get("voter") ?? "").trim() || null;
   const rawPosition = url.searchParams.get("position");
+  const rawFinal = url.searchParams.get("final");
+  const rawGroupBy = url.searchParams.get("groupBy");
   const rawFromYear = url.searchParams.get("from");
   const rawToYear = url.searchParams.get("to");
   const rawLimit = url.searchParams.get("limit");
@@ -35,6 +37,11 @@ export async function handleItemSearch(request: Request, forceMarkdown = false) 
   }
   if (position && !voter) return errorResponse("position requires a voter", markdown);
 
+  const final = parseBoolean(rawFinal, false);
+  if (final === null) return errorResponse("final must be true or false", markdown);
+  const groupBy = parseGroupBy(rawGroupBy);
+  if (groupBy === null) return errorResponse("groupBy must be none, file, or matter", markdown);
+
   const fromYear = parseYear(rawFromYear, MIN_YEAR);
   const toYear = parseYear(rawToYear, MAX_YEAR);
   if (fromYear === null || toYear === null) {
@@ -50,6 +57,8 @@ export async function handleItemSearch(request: Request, forceMarkdown = false) 
     voter,
     voterKey: voter ? voter.split(/\s+/).at(-1)?.replace(/[^a-z'-]/gi, "") || null : null,
     position,
+    final,
+    groupBy,
     fromYear,
     toYear,
     limit,
@@ -57,6 +66,18 @@ export async function handleItemSearch(request: Request, forceMarkdown = false) 
 
   if (markdown) return new Response(toMarkdown(response), { headers: markdownHeaders() });
   return Response.json(response, { headers: publicHeaders() });
+}
+
+function parseBoolean(value: string | null, fallback: boolean) {
+  if (!value) return fallback;
+  if (["true", "1"].includes(value.toLowerCase())) return true;
+  if (["false", "0"].includes(value.toLowerCase())) return false;
+  return null;
+}
+
+function parseGroupBy(value: string | null): GroupBy | null {
+  if (!value) return "none";
+  return value === "none" || value === "file" || value === "matter" ? value : null;
 }
 
 function parsePosition(value: string | null): VotePosition | null {
@@ -105,11 +126,16 @@ function toMarkdown(response: LegislativeItemResponse) {
     `- Query: \`${escapeInline(response.query)}\``,
     `- Voter: ${response.filters.voter ? `\`${escapeInline(response.filters.voter)}\`` : "any"}`,
     `- Position: ${response.filters.position ?? "any"}`,
+    `- Final actions only: ${response.filters.final ? "yes" : "no"}`,
+    `- Grouped by: ${response.filters.groupBy}`,
     `- Years: ${response.filters.fromYear}–${response.filters.toYear}`,
+    response.interpretedQueries.length
+      ? `- Also interpreted as: ${response.interpretedQueries.map((query) => `\`${escapeInline(query)}\``).join(", ")}`
+      : null,
     `- Matching items: ${response.total}`,
     `- Results returned: ${response.returned}`,
     "",
-  ];
+  ].filter((line): line is string => line !== null);
 
   for (const [index, result] of response.results.entries()) {
     lines.push(
@@ -117,10 +143,20 @@ function toMarkdown(response: LegislativeItemResponse) {
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Official PDF pages: ${pageRange(result.startPage, result.endPage)}`,
+      result.groupCount > 1 ? `- Grouped matching records: ${result.groupCount}` : "",
       "",
       `> ${result.snippet}`,
       "",
     );
+    if (result.extracted.amounts.length || result.extracted.housingUnits.length || result.extracted.parties.length) {
+      lines.push("### Extracted facts", "");
+      if (result.extracted.parties.length) lines.push(`- Parties: ${result.extracted.parties.join("; ")}`);
+      if (result.extracted.amounts.length) {
+        lines.push(`- Amounts: ${result.extracted.amounts.map((amount) => `${amount.raw} (${amount.qualifier})`).join("; ")}`);
+      }
+      if (result.extracted.housingUnits.length) lines.push(`- Housing-unit counts: ${result.extracted.housingUnits.join(", ")}`);
+      lines.push("");
+    }
     if (result.rollCalls.length) {
       lines.push("### Recorded roll calls", "");
       for (const rollCall of result.rollCalls) lines.push(...rollCallMarkdown(rollCall));
@@ -137,7 +173,11 @@ function toMarkdown(response: LegislativeItemResponse) {
 }
 
 function rollCallMarkdown(rollCall: RollCall) {
-  const lines = [`**Vote ${rollCall.sequence}.** ${rollCall.action || "Action text unavailable."}`, ""];
+  const finalLabel = rollCall.isFinal ? ", final" : "";
+  const lines = [
+    `**Vote ${rollCall.sequence} · ${rollCall.actionType}${finalLabel}.** ${rollCall.action || "Action text unavailable."}`,
+    "",
+  ];
   for (const [label, names] of [
     ["Ayes", rollCall.ayes],
     ["Noes", rollCall.noes],

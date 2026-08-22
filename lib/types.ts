@@ -14,6 +14,7 @@ export interface SearchResult {
 
 export interface SearchResponse {
   query: string;
+  interpretedQueries: string[];
   filters: {
     year: number | null;
     kind: DocumentKind | null;

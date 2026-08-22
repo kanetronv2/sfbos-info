@@ -30,6 +30,7 @@ Provision a Neon Postgres integration in Vercel and copy `.env.example` to `.env
 npm run db:migrate
 npm run db:ingest
 npm run db:items
+npm run db:comments
 ```
 
 Both database commands load `.env.local` automatically.
@@ -47,8 +48,8 @@ npm run db:ingest -- --from-year 2018 --to-year 2018 --limit 10
 ```
 
 `npm run db:items` parses the indexed minutes into legislative-file blocks and action-aware roll
-calls. It reads from Postgres rather than the local PDFs, is resumable, and accepts the same year,
-limit, force, and dry-run options.
+calls. `npm run db:comments` builds a speaker-level index of the clerk's public-comment summaries.
+Both read from Postgres, are resumable, and accept the same year, limit, force, and dry-run options.
 
 ## API
 
@@ -56,18 +57,22 @@ limit, force, and dry-run options.
 - `GET /api/search.md?q=housing+vote&year=2018`
 - `GET /api/items?q=dwelling+units&voter=Chan&position=no&from=2021&to=2026`
 - `GET /api/items.md?q=469+Stevenson&voter=Chan`
+- `GET /api/items.md?q=killer+robots&final=true&groupBy=file`
+- `GET /api/comments.md?q=Great+Highway&from=2021&to=2021`
 - `GET /openapi.yaml`
 - `GET /llms.txt`
 
-Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, `position`, `from`,
-`to`, and `limit`, and returns the action attached to every roll call. Both APIs can return Markdown
-using the `.md` route, `?format=md`, or `Accept: text/markdown`.
+Page search supports `year`, `kind`, and `limit`. Item search supports `voter`, `position`, `final`,
+`groupBy`, `from`, `to`, and `limit`; it returns typed actions and extracted amounts, housing-unit
+counts, and agreement parties. Comment search supports `speaker`, `from`, `to`, and `limit`. All APIs
+expand common civic-language aliases and can return Markdown using the `.md` route, `?format=md`, or
+`Accept: text/markdown`.
 
 ## Deploy on Vercel
 
 1. Import this GitHub repository into Vercel with the Next.js defaults.
 2. Add a Neon integration or set `DATABASE_URL` in the Vercel project.
 3. Set `NEXT_PUBLIC_SITE_URL` to the production origin.
-4. From a machine containing the downloaded corpus, run `npm run db:migrate`, `npm run db:ingest`, and `npm run db:items` against the production database.
+4. From a machine containing the downloaded corpus, run `npm run db:migrate`, `npm run db:ingest`, `npm run db:items`, and `npm run db:comments` against the production database.
 
 Pushes to the repository's production branch can then be used for automatic deployments.

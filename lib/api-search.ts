@@ -92,12 +92,15 @@ function toMarkdown(response: SearchResponse) {
     "# San Francisco Board of Supervisors search",
     "",
     `- Query: \`${escapeInline(response.query)}\``,
+    response.interpretedQueries.length
+      ? `- Also interpreted as: ${response.interpretedQueries.map((query) => `\`${escapeInline(query)}\``).join(", ")}`
+      : null,
     `- Filters: ${filterDescription || "none"}`,
     `- Matching pages: ${response.total}`,
     `- Results returned: ${response.returned}`,
     `- Index: ${response.source === "postgres" ? "complete corpus" : "preview only"}`,
     "",
-  ];
+  ].filter((line): line is string => line !== null);
 
   if (!response.results.length) {
     lines.push("No matching pages were found.", "");

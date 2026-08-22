@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { previewResults } from "./demo-data";
+import { expandQuery } from "./query-expansion";
 import type { DocumentKind, SearchResponse, SearchResult } from "./types";
 
 interface SearchOptions {
@@ -23,13 +24,18 @@ interface DatabaseRow {
 }
 
 export async function searchDocuments(options: SearchOptions): Promise<SearchResponse> {
+  const expanded = expandQuery(options.query);
   if (!process.env.DATABASE_URL) return searchPreview(options);
 
   const sql = neon(process.env.DATABASE_URL);
+  const variants = expanded.searchQueries;
+  const params: Array<string | number> = [...variants];
+  const queryExpression = variants
+    .map((_, index) => `websearch_to_tsquery('english', $${index + 1})`)
+    .join(" || ");
   const filters: string[] = [
-    "p.search_vector @@ websearch_to_tsquery('english', $1)",
+    `p.search_vector @@ (${queryExpression})`,
   ];
-  const params: Array<string | number> = [options.query];
 
   if (options.year) {
     params.push(options.year);
@@ -56,10 +62,10 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
         ts_headline(
           'english',
           p.content,
-          websearch_to_tsquery('english', $1),
+            (${queryExpression}),
           'StartSel=, StopSel=, MaxWords=55, MinWords=22, ShortWord=2, HighlightAll=false'
         ) AS snippet,
-        ts_rank_cd(p.search_vector, websearch_to_tsquery('english', $1), 32)::float AS score,
+        ts_rank_cd(p.search_vector, (${queryExpression}), 32)::float AS score,
         count(*) OVER()::int AS total_count
       FROM pages p
       JOIN documents d ON d.id = p.document_id
@@ -84,6 +90,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
 
   return {
     query: options.query,
+    interpretedQueries: expanded.interpreted,
     filters: { year: options.year, kind: options.kind },
     total: rows[0]?.total_count ?? 0,
     returned: results.length,
@@ -93,6 +100,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
 }
 
 function searchPreview(options: SearchOptions): SearchResponse {
+  const expanded = expandQuery(options.query);
   const terms = options.query.toLowerCase().split(/\s+/).filter(Boolean);
   const results = previewResults
     .filter((result) => !options.year || result.year === options.year)
@@ -109,6 +117,7 @@ function searchPreview(options: SearchOptions): SearchResponse {
 
   return {
     query: options.query,
+    interpretedQueries: expanded.interpreted,
     filters: { year: options.year, kind: options.kind },
     total: results.length,
     returned: results.length,

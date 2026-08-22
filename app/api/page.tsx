@@ -12,7 +12,10 @@ Accept: application/json`;
 const markdownExample = `GET /api/search.md?q=who+voted+against+housing&year=2018
 Accept: text/markdown`;
 
-const itemExample = `GET /api/items.md?q=%22dwelling+units%22+OR+%22residential+unit%22&voter=Chan&from=2021&to=2026
+const itemExample = `GET /api/items.md?q=housing+production&voter=Chan&position=no&final=true&groupBy=file&from=2021&to=2026
+Accept: text/markdown`;
+
+const commentExample = `GET /api/comments.md?q=Great+Highway&from=2021&to=2021
 Accept: text/markdown`;
 
 export default function ApiPage() {
@@ -52,6 +55,8 @@ export default function ApiPage() {
             <code>q</code><p>Required. Searches the item and related files for the same matter.</p>
             <code>voter</code><p>Optional. Recorded surname or full name; for example, <code>Chan</code>.</p>
             <code>position</code><p>Optional. <code>aye</code>, <code>no</code>, <code>absent</code>, or <code>excused</code>. Requires <code>voter</code>.</p>
+            <code>final</code><p>Optional boolean. Restrict matches to roll calls classified as final actions.</p>
+            <code>groupBy</code><p>Optional. <code>none</code>, <code>file</code>, or <code>matter</code> to collapse repeated readings and companion records.</p>
             <code>from / to</code><p>Optional inclusive year range, 2012–2026.</p>
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
@@ -62,6 +67,21 @@ export default function ApiPage() {
             an Aye on “disapprove” opposes the underlying project, while an Aye on “table
             disapproval” supports it. The returned action text makes that distinction explicit.
           </p>
+        </section>
+
+        <section>
+          <h2><code>GET /api/comments</code></h2>
+          <p>
+            Search clerk-written public-comment summaries as individual speaker statements instead
+            of mixed page snippets.
+          </p>
+          <div className="parameter-grid">
+            <code>q</code><p>Required. Topic or phrase to search.</p>
+            <code>speaker</code><p>Optional speaker-name filter.</p>
+            <code>from / to</code><p>Optional inclusive year range, 2012–2026.</p>
+            <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
+          </div>
+          <pre><code>{commentExample}</code></pre>
         </section>
 
         <section>
