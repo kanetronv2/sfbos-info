@@ -12,7 +12,7 @@ const examples = [
 ];
 
 const examplePrompt =
-  "How many housing units has Connie Chan voted against? Use https://sfbos.info, distinguish procedural motions from final votes, and cite the official SF government documents.";
+  "How many housing units has Connie Chan voted against? Which addresses? Use https://sfbos.info";
 
 type SearchAppProps = {
   initialQuery?: string;
