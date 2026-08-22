@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { cache } from "react";
-import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
+import { documentFileUrl, documentMarkdownExcerptUrl } from "./document-url";
 
 export interface SupervisorSummary {
   slug: string;
@@ -148,7 +148,7 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
       title: row.title,
       meetingDate: row.meeting_date,
       startPage: row.start_page,
-      transcriptUrl: documentUrl(row.document_id, row.meeting_date, "minutes", row.start_page),
+      transcriptUrl: documentFileUrl(row.document_id, row.meeting_date, "minutes", row.file_number),
       markdownUrl: documentMarkdownExcerptUrl(row.document_id, row.meeting_date, "minutes", row.start_page, row.end_page),
       officialUrl: row.official_url,
     })),

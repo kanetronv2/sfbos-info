@@ -111,18 +111,19 @@ function toMarkdown(response: SearchResponse) {
   }
 
   response.results.forEach((result, index) => {
-    lines.push(
+    lines.push(...[
       `## ${index + 1}. [${result.title}](${result.transcriptUrl})`,
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Document: ${result.kind}`,
       `- PDF page: ${result.page}`,
+      result.fileNumber ? `- Structured legislative record: File ${result.fileNumber}` : null,
       `- [Focused Markdown excerpt](${result.markdownUrl})`,
       `- [Official source PDF](${result.officialUrl})`,
       "",
       `> ${result.snippet.replace(/\n/g, " ")}`,
       "",
-    );
+    ].filter((line): line is string => line !== null));
   });
 
   lines.push(

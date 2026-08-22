@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { documentMarkdownPath, documentSlug, documentUrl } from "@/lib/document-url";
 import { getDocumentEvidence } from "@/lib/documents";
+import { TargetDetails } from "@/components/target-details";
 
 type EvidencePageProps = {
   params: Promise<{ id: string; slug?: string[] }>;
@@ -93,6 +94,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
 
   return (
     <div className="evidence-shell">
+      <TargetDetails />
       <header className="topbar">
         <Link href="/" className="wordmark" aria-label="SF BOS Search home">
           <span className="prompt-mark" aria-hidden="true">&gt;_</span>

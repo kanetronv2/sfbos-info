@@ -289,6 +289,8 @@ footer div:last-child { display: flex; gap: 14px; }
 .section-heading > span { color: var(--muted); font: 9px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
 .structured-records { margin: 20px 0 72px; }
 .structured-item { border-bottom: 1px solid var(--line); }
+.structured-item { scroll-margin-top: 18px; }
+.structured-item:target { outline: 2px solid var(--accent); outline-offset: -2px; background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
 .structured-item summary { display: grid; grid-template-columns: 86px minmax(0, 1fr) 78px; gap: 16px; align-items: baseline; padding: 15px 5px; cursor: pointer; list-style: none; }
 .structured-item summary::-webkit-details-marker { display: none; }
 .structured-item summary > span, .structured-item summary > a { color: var(--muted); font: 9px var(--mono); letter-spacing: .06em; }

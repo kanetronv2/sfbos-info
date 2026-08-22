@@ -10,6 +10,7 @@ export interface SearchResult {
   markdownUrl: string;
   officialUrl: string;
   page: number;
+  fileNumber?: string;
   snippet: string;
   score: number;
   lexicalScore?: number;

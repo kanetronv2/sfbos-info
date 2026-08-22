@@ -262,7 +262,11 @@ export function SearchApp() {
                       </h2>
                       <p><HighlightedText text={result.snippet} query={response.query} /></p>
                       <div className="result-source-links">
-                        <a href={result.transcriptUrl}>EXTRACTED TEXT, PAGE {result.page} →</a>
+                        <a href={result.transcriptUrl}>
+                          {result.fileNumber
+                            ? `STRUCTURED RECORD, FILE ${result.fileNumber} →`
+                            : `EXTRACTED TEXT, PAGE ${result.page} →`}
+                        </a>
                         <a href={result.officialUrl} target="_blank" rel="noreferrer">OFFICIAL PDF ↗</a>
                       </div>
                       <div className="source-url">{shortUrl(result.transcriptUrl)}</div>

@@ -13,6 +13,10 @@ export function documentUrl(id: string, meetingDate: string, kind: string, page?
   return `${getSiteUrl()}${documentPath(id, meetingDate, kind, page)}`;
 }
 
+export function documentFileUrl(id: string, meetingDate: string, kind: string, fileNumber: string) {
+  return `${getSiteUrl()}${documentPath(id, meetingDate, kind)}#file-${encodeURIComponent(fileNumber)}`;
+}
+
 export function documentMarkdownPath(id: string, meetingDate: string, kind: string) {
   return `${documentPath(id, meetingDate, kind)}.md`;
 }

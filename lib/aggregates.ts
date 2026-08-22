@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
+import { documentFileUrl, documentMarkdownExcerptUrl } from "./document-url";
 import { extractItemFacts } from "./item-extraction";
 import type { VotePosition } from "./item-types";
 
@@ -80,7 +80,7 @@ export async function aggregateRecordedVotes(options: AggregateOptions) {
       isFinal: row.is_final,
       extractionConfidence: Number(row.confidence),
       extracted: facts,
-      transcriptUrl: documentUrl(String(row.document_id), String(row.meeting_date), "minutes", row.start_page),
+      transcriptUrl: documentFileUrl(String(row.document_id), String(row.meeting_date), "minutes", row.file_number),
       markdownUrl: documentMarkdownExcerptUrl(String(row.document_id), String(row.meeting_date), "minutes", row.start_page, row.end_page),
       officialUrl: row.official_url,
     };

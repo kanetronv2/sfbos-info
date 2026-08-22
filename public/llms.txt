@@ -48,8 +48,9 @@ reading that action. An Aye on a motion to disapprove opposes the underlying pro
 motion to table that disapproval supports it.
 
 Each result provides `transcriptUrl`, `markdownUrl`, and `officialUrl`. Use `markdownUrl` for the
-smallest directly relevant text excerpt, `transcriptUrl` for page-addressable HTML evidence, and
-`officialUrl` to verify against the authoritative City PDF.
+smallest directly relevant text excerpt. For legislative items, `transcriptUrl` targets the exact
+structured-record row; other matches target page-addressable HTML evidence. Use `officialUrl` to
+verify against the authoritative City PDF.
 
 Item responses also identify action types and likely final actions, and extract monetary amounts,
 housing-unit counts, and agreement parties. These are deterministic aids; verify them against the

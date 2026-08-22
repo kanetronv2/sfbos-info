@@ -18,7 +18,7 @@ const cases = [
     test: (body) => body.results.some((item) =>
       item.fileNumber === "210920" &&
       item.transcriptUrl.includes("/documents/") &&
-      item.transcriptUrl.includes("#page-") &&
+      item.transcriptUrl.includes("#file-210920") &&
       item.markdownUrl.includes(".md?pages=") &&
       item.officialUrl.startsWith("https://")
     ),
@@ -71,7 +71,7 @@ const cases = [
   {
     name: "deterministic supervisor aggregation",
     path: "/api/aggregates/votes?voter=Chan&position=no&from=2021&to=2026&groupBy=file&limit=5",
-    test: (body) => body.voter?.slug === "connie-chan" && body.total > 0 && body.results.every((result) => result.recordedPosition === "no" && result.transcriptUrl.includes("#page-")),
+    test: (body) => body.voter?.slug === "connie-chan" && body.total > 0 && body.results.every((result) => result.recordedPosition === "no" && result.transcriptUrl.includes(`#file-${result.fileNumber}`)),
   },
   {
     name: "hybrid search explicit fallback",

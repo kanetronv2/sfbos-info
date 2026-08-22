@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { previewResults } from "./demo-data";
-import { documentMarkdownExcerptUrl, documentUrl } from "./document-url";
+import { documentFileUrl, documentMarkdownExcerptUrl, documentUrl } from "./document-url";
 import { displayDocumentTitle } from "./document-title";
 import { expandQuery } from "./query-expansion";
 import { rerankWithEmbeddings } from "./embeddings";
@@ -22,6 +22,7 @@ interface DatabaseRow {
   title: string;
   official_url: string;
   page_number: number;
+  file_number: string | null;
   snippet: string;
   score: number;
   total_count: number;
@@ -65,6 +66,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
         d.title,
         d.official_url,
         p.page_number,
+        matched_item.file_number,
         ts_headline(
           'english',
           p.content,
@@ -75,6 +77,17 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
         count(*) OVER()::int AS total_count
       FROM pages p
       JOIN documents d ON d.id = p.document_id
+      LEFT JOIN LATERAL (
+        SELECT i.file_number
+        FROM legislative_items i
+        WHERE i.document_id = p.document_id
+          AND p.page_number BETWEEN i.start_page AND i.end_page
+        ORDER BY
+          CASE WHEN i.direct_search_vector @@ (${queryExpression}) THEN 0 ELSE 1 END,
+          ts_rank_cd(i.direct_search_vector, (${queryExpression}), 32) DESC,
+          i.ordinal
+        LIMIT 1
+      ) matched_item ON d.kind = 'minutes'
       WHERE ${filters.join(" AND ")}
       ORDER BY score DESC, d.meeting_date DESC, p.page_number ASC
       LIMIT $${limitPosition}
@@ -88,10 +101,13 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     year: row.year,
     kind: row.kind,
     title: displayDocumentTitle(row.title),
-    transcriptUrl: documentUrl(row.document_id, row.meeting_date, row.kind, row.page_number),
+    transcriptUrl: row.file_number
+      ? documentFileUrl(row.document_id, row.meeting_date, row.kind, row.file_number)
+      : documentUrl(row.document_id, row.meeting_date, row.kind, row.page_number),
     markdownUrl: documentMarkdownExcerptUrl(row.document_id, row.meeting_date, row.kind, row.page_number),
     officialUrl: row.official_url,
     page: row.page_number,
+    fileNumber: row.file_number ?? undefined,
     snippet: normalizeWhitespace(row.snippet),
     score: Number(row.score),
   }));

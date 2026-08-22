@@ -80,7 +80,8 @@ export default function ApiPage() {
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
           <p>
-            Every result includes a canonical <code>transcriptUrl</code> with a page anchor and a
+            When a page belongs to a parsed legislative item, <code>transcriptUrl</code> targets that
+            structured record row. Other matches retain a page anchor. Every result also has a
             separate <code>officialUrl</code> for the authoritative City PDF.
           </p>
         </section>

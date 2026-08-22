@@ -20,6 +20,7 @@ assert(Array.isArray(evidence.deterministicAggregate?.aggregation?.addresses), "
 
 const firstResult = evidence.legislativeItems.results[0];
 assert(firstResult.transcriptUrl?.includes("/documents/"), "evidence result has no HTML transcript URL");
+assert(firstResult.transcriptUrl?.includes(`#file-${firstResult.fileNumber}`), "legislative evidence does not target its structured-record row");
 assert(firstResult.markdownUrl?.includes(".md?pages="), "evidence result has no focused Markdown URL");
 assert(firstResult.officialUrl?.startsWith("https://"), "evidence result has no official source URL");
 

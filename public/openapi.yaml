@@ -24,7 +24,7 @@ paths:
           schema: { type: string, enum: [json, md] }
       responses:
         "200":
-          description: A compact evidence bundle with transcript and official PDF citations.
+          description: A compact evidence bundle with structured-record or page anchors and official PDF citations.
           content:
             application/json:
               schema:
@@ -269,6 +269,9 @@ components:
               markdownUrl: { type: string, format: uri }
               officialUrl: { type: string, format: uri }
               page: { type: integer }
+              fileNumber:
+                description: Present when transcriptUrl targets a structured legislative-record row.
+                type: string
               snippet: { type: string }
               score: { type: number }
     RollCall:

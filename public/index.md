@@ -50,4 +50,4 @@ MCP Streamable HTTP: `POST /api/mcp`.
 
 Human-readable reconciled supervisor profiles: `/supervisors`.
 
-Search responses provide `markdownUrl` for a focused Markdown excerpt, `transcriptUrl` for canonical HTML evidence, and `officialUrl` for the authoritative San Francisco government PDF. Document transcripts accept page ranges of up to 50 pages using `?pages=5-7`.
+Search responses provide `markdownUrl` for a focused Markdown excerpt, `transcriptUrl` for canonical HTML evidence, and `officialUrl` for the authoritative San Francisco government PDF. Legislative-item transcript links target the exact structured-record row. Other results target the matching page. Document transcripts accept page ranges of up to 50 pages using `?pages=5-7`.
