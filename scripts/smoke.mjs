@@ -134,9 +134,17 @@ const contactPassed = supervisorResponse.ok &&
 console.log(`${contactPassed ? "PASS" : "FAIL"}  current supervisor contact profile`);
 if (!contactPassed) failures += 1;
 
+const homeResponse = await fetch(baseUrl);
+const homeHtml = await homeResponse.text();
+const analyticsPassed = homeResponse.ok &&
+  homeHtml.includes("googletagmanager.com/gtag/js?id=G-Q4NGCL52JK") &&
+  homeHtml.includes("gtag('config', 'G-Q4NGCL52JK')");
+console.log(`${analyticsPassed ? "PASS" : "FAIL"}  GA4 measurement tag`);
+if (!analyticsPassed) failures += 1;
+
 if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 3} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 4} infrastructure smoke tests passed against ${baseUrl}.`);
 }
