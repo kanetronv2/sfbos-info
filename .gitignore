@@ -1,8 +1,8 @@
 node_modules/
 .next/
 .vercel/
-.env
-.env.local
+.env*
+!.env.example
 *.log
 
 # The local source archive is reproducible via scripts and is far too large for
