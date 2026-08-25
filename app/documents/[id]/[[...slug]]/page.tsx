@@ -7,6 +7,7 @@ import { listSupervisorNameLinks } from "@/lib/supervisors";
 import { SiteHeader } from "@/components/site-header";
 import { TargetDetails } from "@/components/target-details";
 import { SupervisorLinkedText } from "@/components/supervisor-linked-text";
+import { VoteLine } from "@/components/vote-line";
 
 type EvidencePageProps = {
   params: Promise<{ id: string; slug?: string[] }>;
@@ -239,28 +240,6 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
       />
     </div>
-  );
-}
-
-function VoteLine({
-  label,
-  names,
-  supervisors,
-  showWhenEmpty = false,
-}: {
-  label: string;
-  names: string[];
-  supervisors: Awaited<ReturnType<typeof listSupervisorNameLinks>>;
-  showWhenEmpty?: boolean;
-}) {
-  if (!names.length && !showWhenEmpty) return null;
-  return (
-    <p className="vote-line">
-      <strong>{label}:</strong>{" "}
-      {names.length > 0
-        ? <SupervisorLinkedText text={names.join(", ")} supervisors={supervisors} />
-        : "None"}
-    </p>
   );
 }
 

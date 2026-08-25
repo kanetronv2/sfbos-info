@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { cache } from "react";
 import { documentFileUrl, documentMarkdownExcerptUrl } from "./document-url";
 import { getSupervisorDistrict } from "./supervisor-districts";
+import { getOfficialSupervisorPortrait } from "./supervisor-official-data";
 
 export interface SupervisorSummary {
   slug: string;
@@ -9,6 +10,9 @@ export interface SupervisorSummary {
   familyName: string;
   district: string | null;
   active: boolean;
+  termStart: string | null;
+  termEnd: string | null;
+  officialUrl: string | null;
   firstRecordedDate: string | null;
   lastRecordedDate: string | null;
   recordedPositions: number;
@@ -26,13 +30,18 @@ export interface SupervisorContact {
   address: string;
   officialUrl: string;
   sourceUrl: string;
+  portraitUrl: string | null;
 }
+
+export type SupervisorPosition = "aye" | "no" | "absent" | "excused";
 
 export interface SupervisorVote {
   id: string;
-  position: "aye" | "no" | "absent" | "excused";
+  position: SupervisorPosition;
   confidence: number;
   recordedName: string;
+  summary: string | null;
+  summaryModel: string | null;
   action: string;
   actionType: string;
   isFinal: boolean;
@@ -43,11 +52,15 @@ export interface SupervisorVote {
   transcriptUrl: string;
   markdownUrl: string;
   officialUrl: string;
+  ayes: string[];
+  noes: string[];
+  absent: string[];
+  excused: string[];
 }
 
 export interface SupervisorProfile extends SupervisorSummary {
   aliases: Array<{ alias: string; confidence: number; source: string }>;
-  counts: Record<"aye" | "no" | "absent" | "excused", number>;
+  counts: Record<SupervisorPosition, number>;
   votes: SupervisorVote[];
   parserVersions: string[];
   contact: SupervisorContact | null;
@@ -59,6 +72,7 @@ export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
   const rows = await sql.query(
     `SELECT
        s.slug, s.display_name, s.family_name, s.district, s.active,
+       s.term_start::text, s.term_end::text, s.metadata,
        min(d.meeting_date)::text AS first_recorded_date,
        max(d.meeting_date)::text AS last_recorded_date,
        count(rcp.id)::int AS recorded_positions
@@ -81,6 +95,9 @@ export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
     familyName: row.family_name,
     district: getSupervisorDistrict(row.slug, row.district),
     active: row.active,
+    termStart: row.term_start,
+    termEnd: row.term_end,
+    officialUrl: parseOfficialUrl(row.metadata),
     firstRecordedDate: row.first_recorded_date,
     lastRecordedDate: row.last_recorded_date,
     recordedPositions: row.recorded_positions,
@@ -118,11 +135,12 @@ export const listSupervisorNameLinks = cache(async (): Promise<SupervisorNameLin
   });
 });
 
-export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfile | null> => {
+export const getSupervisor = cache(async (slug: string, position?: SupervisorPosition): Promise<SupervisorProfile | null> => {
   if (!process.env.DATABASE_URL || !/^[a-z0-9-]+$/.test(slug)) return null;
   const sql = neon(process.env.DATABASE_URL);
   const [supervisor] = await sql.query(
-    `SELECT id::text, slug, display_name, family_name, district, active, metadata
+    `SELECT id::text, slug, display_name, family_name, district, active,
+       term_start::text, term_end::text, metadata
      FROM supervisors WHERE slug = $1`,
     [slug],
   );
@@ -148,17 +166,21 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
     sql.query(
       `SELECT
          rcp.id::text, rcp.position, rcp.confidence::float, rcp.recorded_name,
-         rc.action, rc.action_type, rc.is_final, i.file_number, i.title,
+         rc.action, rc.action_type, rc.is_final, rc.ayes, rc.noes, rc.absent, rc.excused,
+         rcs.summary, rcs.model AS summary_model,
+         i.file_number, i.title,
          d.id::text AS document_id, d.meeting_date::text, d.official_url,
          i.start_page, i.end_page
        FROM roll_call_positions rcp
        JOIN roll_calls rc ON rc.id = rcp.roll_call_id
+       LEFT JOIN roll_call_summaries rcs ON rcs.roll_call_id = rc.id
        JOIN legislative_items i ON i.id = rc.item_id
        JOIN documents d ON d.id = i.document_id
        WHERE rcp.supervisor_id = $1
+         AND ($2::text IS NULL OR rcp.position = $2)
        ORDER BY d.meeting_date DESC, i.ordinal DESC, rc.sequence DESC
        LIMIT 250`,
-      [supervisor.id],
+      [supervisor.id, position ?? null],
     ),
     sql.query(
       `SELECT DISTINCT pr.parser_version
@@ -184,18 +206,23 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
     familyName: supervisor.family_name,
     district: getSupervisorDistrict(supervisor.slug, supervisor.district),
     active: supervisor.active,
+    termStart: supervisor.term_start,
+    termEnd: supervisor.term_end,
+    officialUrl: parseOfficialUrl(supervisor.metadata),
     firstRecordedDate: firstDates[0] ?? null,
     lastRecordedDate: lastDates.at(-1) ?? null,
     recordedPositions: Object.values(counts).reduce((sum, value) => sum + value, 0),
     aliases: aliases.map((row) => ({ alias: row.alias, confidence: Number(row.confidence), source: row.source })),
     counts,
     parserVersions: parserRows.map((row) => row.parser_version),
-    contact: parseContact(supervisor.metadata?.contact),
+    contact: parseContact(supervisor.metadata?.contact, supervisor.slug),
     votes: voteRows.map((row) => ({
       id: row.id,
       position: row.position,
       confidence: Number(row.confidence),
       recordedName: row.recorded_name,
+      summary: row.summary ?? null,
+      summaryModel: row.summary_model ?? null,
       action: row.action,
       actionType: row.action_type,
       isFinal: row.is_final,
@@ -206,14 +233,29 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
       transcriptUrl: documentFileUrl(row.document_id, row.meeting_date, "minutes", row.file_number),
       markdownUrl: documentMarkdownExcerptUrl(row.document_id, row.meeting_date, "minutes", row.start_page, row.end_page),
       officialUrl: row.official_url,
+      ayes: row.ayes ?? [],
+      noes: row.noes ?? [],
+      absent: row.absent ?? [],
+      excused: row.excused ?? [],
     })),
   };
 });
 
-function parseContact(value: unknown): SupervisorContact | null {
+function parseContact(value: unknown, slug: string): SupervisorContact | null {
   if (!value || typeof value !== "object") return null;
   const contact = value as Record<string, unknown>;
   const fields = ["email", "phone", "address", "officialUrl", "sourceUrl"] as const;
   if (!fields.every((field) => typeof contact[field] === "string" && contact[field])) return null;
-  return Object.fromEntries(fields.map((field) => [field, contact[field]])) as unknown as SupervisorContact;
+  return {
+    ...Object.fromEntries(fields.map((field) => [field, contact[field]])),
+    portraitUrl: typeof contact.portraitUrl === "string" && contact.portraitUrl
+      ? contact.portraitUrl
+      : getOfficialSupervisorPortrait(slug),
+  } as SupervisorContact;
+}
+
+function parseOfficialUrl(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const metadata = value as Record<string, unknown>;
+  return typeof metadata.officialUrl === "string" && metadata.officialUrl ? metadata.officialUrl : null;
 }

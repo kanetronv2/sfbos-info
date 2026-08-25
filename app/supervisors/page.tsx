@@ -21,7 +21,6 @@ export const revalidate = 3600;
 export default async function SupervisorsPage() {
   const supervisors = await listSupervisors();
   const siteUrl = getSiteUrl();
-  const indexedSupervisors = supervisors.filter((supervisor) => supervisor.recordedPositions > 0);
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -30,8 +29,8 @@ export default async function SupervisorsPage() {
     url: `${siteUrl}/supervisors`,
     mainEntity: {
       "@type": "ItemList",
-      numberOfItems: indexedSupervisors.length,
-      itemListElement: indexedSupervisors.map((supervisor, index) => ({
+      numberOfItems: supervisors.length,
+      itemListElement: supervisors.map((supervisor, index) => ({
         "@type": "ListItem",
         position: index + 1,
         name: supervisor.displayName,
@@ -57,8 +56,8 @@ export default async function SupervisorsPage() {
                 <Link href={`/supervisors/${supervisor.slug}`}>{supervisor.displayName}</Link>
                 {supervisor.active && <span className="current-badge">CURRENT</span>}
               </div>
-              <span className="entity-district">District {supervisor.district ?? "unknown"}</span>
-              <span>{supervisor.firstRecordedDate ?? "unknown"} to {supervisor.lastRecordedDate ?? "unknown"}</span>
+              <span className="entity-district">{districtLabel(supervisor.district)}</span>
+              <span>{serviceOrRecordRange(supervisor)}</span>
               <strong>{supervisor.recordedPositions.toLocaleString()} recorded positions</strong>
             </li>
           ))}
@@ -70,4 +69,15 @@ export default async function SupervisorsPage() {
       />
     </div>
   );
+}
+
+function districtLabel(district: string | null) {
+  if (district === "At-large") return "At-large";
+  return `District ${district ?? "unknown"}`;
+}
+
+function serviceOrRecordRange(supervisor: Awaited<ReturnType<typeof listSupervisors>>[number]) {
+  const start = supervisor.firstRecordedDate ?? supervisor.termStart ?? "unknown";
+  const end = supervisor.lastRecordedDate ?? supervisor.termEnd ?? "unknown";
+  return `${start} to ${end}`;
 }

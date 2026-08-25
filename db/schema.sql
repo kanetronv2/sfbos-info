@@ -139,6 +139,19 @@ COMMENT ON TABLE legislative_items IS
 COMMENT ON TABLE roll_calls IS
   'Recorded roll calls with the immediately preceding action text preserved for interpretation.';
 
+CREATE TABLE IF NOT EXISTS roll_call_summaries (
+  roll_call_id bigint PRIMARY KEY REFERENCES roll_calls(id) ON DELETE CASCADE,
+  summary text NOT NULL CHECK (length(trim(summary)) > 0),
+  model text NOT NULL,
+  prompt_version text NOT NULL,
+  source_sha256 text NOT NULL CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE roll_call_summaries IS
+  'Cached, model-generated one-sentence summaries of roll-call source text, with generation provenance.';
+
 CREATE TABLE IF NOT EXISTS public_comments (
   id bigserial PRIMARY KEY,
   document_id bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,

@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { VoteLine } from "@/components/vote-line";
 import { getSiteUrl } from "@/lib/site-url";
 import { getDistrictNeighborhoods } from "@/lib/supervisor-districts";
-import { getSupervisor } from "@/lib/supervisors";
+import { currentSupervisorSalary } from "@/lib/supervisor-official-data";
+import { getSupervisor, listSupervisorNameLinks, type SupervisorPosition } from "@/lib/supervisors";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ position?: string }>;
+};
+const positions: SupervisorPosition[] = ["aye", "no", "absent", "excused"];
+const positionFilters = ["total", ...positions] as const;
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -29,19 +37,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SupervisorPage({ params }: Props) {
-  const profile = await getSupervisor((await params).slug);
+export default async function SupervisorPage({ params, searchParams }: Props) {
+  const requestedPosition = (await searchParams).position;
+  const position = positions.includes(requestedPosition as SupervisorPosition)
+    ? requestedPosition as SupervisorPosition
+    : undefined;
+  const slug = (await params).slug;
+  const [profile, supervisorLinks] = await Promise.all([
+    getSupervisor(slug, position),
+    listSupervisorNameLinks(),
+  ]);
   if (!profile) notFound();
   const siteUrl = getSiteUrl();
   const neighborhoods = getDistrictNeighborhoods(profile.district);
   const person = {
     "@type": "Person",
     name: profile.displayName,
+    ...(profile.officialUrl ? { sameAs: profile.officialUrl } : {}),
     ...(profile.active ? { jobTitle: `District ${profile.district} Supervisor` } : {}),
     ...(profile.contact ? {
       email: profile.contact.email,
       telephone: profile.contact.phone,
       url: profile.contact.officialUrl,
+      ...(profile.contact.portraitUrl ? { image: profile.contact.portraitUrl } : {}),
       address: {
         "@type": "PostalAddress",
         streetAddress: profile.contact.address,
@@ -84,7 +102,19 @@ export default async function SupervisorPage({ params }: Props) {
           </p>
         </header>
         <section className="profile-contact" aria-labelledby="contact-title">
-          <div>
+          <div className="profile-identity">
+            {profile.contact?.portraitUrl && (
+              <a href={profile.contact.officialUrl} target="_blank" rel="noreferrer" className="profile-portrait-link">
+                <Image
+                  src={profile.contact.portraitUrl}
+                  alt={`Official portrait of ${profile.displayName}`}
+                  width={345}
+                  height={345}
+                  className="profile-portrait"
+                  priority
+                />
+              </a>
+            )}
             <p className="docs-kicker">{profile.active ? "CURRENT CITY OFFICE" : "FORMER SUPERVISOR"}</p>
             <h2 id="contact-title">Contact</h2>
           </div>
@@ -98,31 +128,58 @@ export default async function SupervisorPage({ params }: Props) {
               <dt>Email</dt><dd><a href={`mailto:${profile.contact.email}`}>{profile.contact.email}</a></dd>
               <dt>Phone</dt><dd><a href={`tel:${profile.contact.phone.replace(/[^+\d]/g, "")}`}>{profile.contact.phone}</a></dd>
               <dt>Office</dt><dd>{profile.contact.address}<br />San Francisco, CA 94102</dd>
+              <dt>Base salary</dt>
+              <dd>
+                <strong>${currentSupervisorSalary.annualBaseSalary.toLocaleString()} per year</strong><br />
+                <span>FY {currentSupervisorSalary.fiscalYear} · effective {currentSupervisorSalary.effectiveDate}</span><br />
+                <a href={currentSupervisorSalary.sourceUrl} target="_blank" rel="noreferrer">Civil Service Commission report ↗</a>
+              </dd>
               <dt>Official page</dt><dd><a href={profile.contact.officialUrl} target="_blank" rel="noreferrer">Board of Supervisors profile ↗</a></dd>
-              <dt>Verified source</dt><dd><a href={profile.contact.sourceUrl} target="_blank" rel="noreferrer">Official current roster ↗</a></dd>
             </dl>
           ) : (
-            <p>
-              {profile.displayName} is not a sitting supervisor, so no current Board office contact is listed.
-              {" "}<a href="https://sfbos.org/former-supervisors" target="_blank" rel="noreferrer">Official former supervisors directory ↗</a>
-            </p>
+            <dl>
+              <dt>District</dt><dd>{profile.district === "At-large" ? "At-large" : profile.district ?? "Not available"}</dd>
+              <dt>Service</dt><dd>{formatService(profile.termStart, profile.termEnd)}</dd>
+              <dt>Official record</dt>
+              <dd>
+                <a href={profile.officialUrl ?? "https://sfbos.org/former-supervisors"} target="_blank" rel="noreferrer">
+                  {profile.officialUrl ? "Board profile or historical entry ↗" : "Former supervisors directory ↗"}
+                </a>
+              </dd>
+            </dl>
           )}
         </section>
-        <section className="position-grid" aria-label="Recorded position counts">
-          {Object.entries(profile.counts).map(([position, count]) => (
-            <div key={position}><span>{position}</span><strong>{count.toLocaleString()}</strong></div>
-          ))}
+        <section className="position-grid" aria-label="Filter recorded positions">
+          {positionFilters.map((filterPosition) => {
+            const isTotal = filterPosition === "total";
+            const isSelected = isTotal ? !position : position === filterPosition;
+            const count = isTotal ? profile.recordedPositions : profile.counts[filterPosition];
+            return (
+              <Link
+                key={filterPosition}
+                href={isTotal
+                  ? `/supervisors/${profile.slug}`
+                  : `/supervisors/${profile.slug}?position=${filterPosition}`}
+                scroll={false}
+                className={`${isTotal ? "position-total " : ""}position-${filterPosition}${isSelected ? " is-selected" : ""}`}
+                aria-current={isSelected ? "true" : undefined}
+                aria-label={`${isSelected ? "Currently showing" : "Show"} ${filterPosition}: ${count.toLocaleString()} recorded positions`}
+              >
+                <span>{filterPosition}</span>
+                <strong>{count.toLocaleString()}</strong>
+                <small>{isSelected ? "FILTERING" : "FILTER"}</small>
+              </Link>
+            );
+          })}
         </section>
-        <section className="profile-provenance">
-          <h2>Identity and provenance</h2>
-          <dl>
-            <dt>Aliases</dt><dd>{profile.aliases.map((alias) => alias.alias).join(", ")}</dd>
-            <dt>Coverage</dt><dd>{profile.firstRecordedDate} to {profile.lastRecordedDate}</dd>
-            <dt>Parser</dt><dd>{profile.parserVersions.join(", ") || "Pending provenance backfill"}</dd>
-          </dl>
-        </section>
-        <section className="structured-records">
-          <div className="section-heading"><div><p className="docs-kicker">MOST RECENT 250</p><h2>Recorded positions</h2></div><span>{profile.recordedPositions} total</span></div>
+        <section className="structured-records" id="recorded-positions">
+          <div className="section-heading">
+            <div>
+              <p className="docs-kicker">MOST RECENT 250{position ? ` · ${position.toUpperCase()}` : ""}</p>
+              <h2>{position ? `${position.toUpperCase()} positions` : "Recorded positions"}</h2>
+            </div>
+            <span>{position ? `${profile.counts[position].toLocaleString()} matching` : `${profile.recordedPositions.toLocaleString()} total`}</span>
+          </div>
           <ol className="vote-evidence-list">
             {profile.votes.map((vote) => (
               <li key={vote.id}>
@@ -137,14 +194,35 @@ export default async function SupervisorPage({ params }: Props) {
                   <span>{Math.round(vote.confidence * 100)}% extraction confidence</span>
                 </div>
                 <h3>File {vote.fileNumber}: {vote.title}</h3>
-                <p>{vote.action || "Action text unavailable."}</p>
+                {vote.summary && (
+                  <p className="vote-llm-summary">
+                    <span title={vote.summaryModel ? `Generated with ${vote.summaryModel}` : undefined}>LLM summary</span>
+                    {vote.summary}
+                  </p>
+                )}
+                <p className="vote-source-text">
+                  <span>Source text</span>
+                  {vote.action || "Action text unavailable."}
+                </p>
+                <div className="supervisor-roll-call" aria-label="Complete roll-call result">
+                  <VoteLine label="Ayes" names={vote.ayes} supervisors={supervisorLinks} showWhenEmpty />
+                  <VoteLine label="Noes" names={vote.noes} supervisors={supervisorLinks} showWhenEmpty />
+                  <VoteLine label="Absent" names={vote.absent} supervisors={supervisorLinks} />
+                  <VoteLine label="Excused" names={vote.excused} supervisors={supervisorLinks} />
+                </div>
                 <div><a href={vote.transcriptUrl}>HTML EVIDENCE</a><a href={vote.markdownUrl}>MARKDOWN</a><a href={vote.officialUrl} target="_blank" rel="noreferrer">OFFICIAL PDF</a></div>
               </li>
             ))}
           </ol>
+          {profile.votes.length === 0 && <p className="no-recorded-vote">No recorded positions match this filter.</p>}
         </section>
       </main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
     </div>
   );
+}
+
+function formatService(start: string | null, end: string | null) {
+  if (!start && !end) return "Service dates not available";
+  return `${start ?? "Unknown"} to ${end ?? "present"}`;
 }

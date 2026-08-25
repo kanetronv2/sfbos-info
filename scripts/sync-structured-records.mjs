@@ -33,7 +33,7 @@ const currentContacts = fetchedContacts.size ? fetchedContacts : fallbackContact
 const currentDistricts = new Map([...currentContacts].map(([slug, value]) => [slug, value.district]));
 const knownDistricts = new Map([
   ["aaron-peskin", "3"], ["ahsha-safai", "11"], ["alan-wong", "4"],
-  ["bilal-mahmood", "5"], ["carmen-chu", "4"], ["catherine-stefani", "2"],
+  ["beya-alcaraz", "4"], ["bilal-mahmood", "5"], ["carmen-chu", "4"], ["catherine-stefani", "2"],
   ["christina-olague", "5"], ["chyanne-chen", "11"], ["connie-chan", "1"],
   ["danny-sauter", "3"], ["david-campos", "9"], ["david-chiu", "3"],
   ["dean-preston", "5"], ["gordon-mar", "4"], ["hillary-ronen", "9"],
@@ -46,6 +46,7 @@ const knownDistricts = new Map([
   ["shamann-walton", "10"], ["stephen-sherrill", "2"], ["vallie-brown", "5"],
 ]);
 const supervisors = [
+  ["beya-alcaraz", "Beya Alcaraz", "Alcaraz"],
   ["john-avalos", "John Avalos", "Avalos"], ["london-breed", "London Breed", "Breed"],
   ["vallie-brown", "Vallie Brown", "Brown"], ["david-campos", "David Campos", "Campos"],
   ["connie-chan", "Connie Chan", "Chan"], ["chyanne-chen", "Chyanne Chen", "Chen"],
@@ -314,7 +315,13 @@ async function reconcileSupervisors() {
     if (!row) {
       [row] = await sql.query("SELECT id::text FROM supervisors WHERE slug = $1", [supervisor.slug]);
     }
-    for (const alias of [supervisor.family, supervisor.name, ...(supervisor.aliases ?? [])]) {
+    for (const alias of [
+      supervisor.family,
+      supervisor.name,
+      `Supervisor ${supervisor.family}`,
+      `Supervisor ${supervisor.name}`,
+      ...(supervisor.aliases ?? []),
+    ]) {
       await sql.query(
         `INSERT INTO supervisor_aliases (
            supervisor_id, alias, normalized_alias, source, confidence

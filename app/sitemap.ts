@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/api`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/supervisors`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${baseUrl}/quality`, changeFrequency: "weekly", priority: 0.4 },
-    ...supervisors.filter((supervisor) => supervisor.recordedPositions > 0).map((supervisor) => ({
+    ...supervisors.map((supervisor) => ({
       url: `${baseUrl}/supervisors/${supervisor.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.6,
