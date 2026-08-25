@@ -14,7 +14,7 @@ const archiveOrigin = "https://sfbos.archive.sf.gov";
 const legistarOrigin = "https://sfgov.legistar.com";
 
 const argumentsMap = parseArguments(process.argv.slice(2));
-const fromYear = Number(argumentsMap.get("from-year") ?? 2012);
+const fromYear = Number(argumentsMap.get("from-year") ?? 1996);
 const toYear = Number(argumentsMap.get("to-year") ?? 2026);
 const documentLimit = Number(argumentsMap.get("limit") ?? Number.POSITIVE_INFINITY);
 const force = argumentsMap.has("force");

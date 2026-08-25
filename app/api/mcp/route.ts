@@ -10,14 +10,14 @@ const protocolVersion = "2025-06-18";
 const tools = [
   {
     name: "search_board_records", title: "Search Board records",
-    description: "Search page-level agenda and minutes text. Returns HTML evidence, focused Markdown, and official PDF URLs.",
-    inputSchema: { type: "object", properties: { query: { type: "string" }, year: { type: "integer", minimum: 2012 }, kind: { type: "string", enum: ["agenda", "minutes"] }, mode: { type: "string", enum: ["lexical", "hybrid"] }, limit: { type: "integer", minimum: 1, maximum: 50 } }, required: ["query"] },
+    description: "Search page-level agenda and minutes text. Returns HTML evidence, focused Markdown, and official City source URLs.",
+    inputSchema: { type: "object", properties: { query: { type: "string" }, year: { type: "integer", minimum: 1996 }, kind: { type: "string", enum: ["agenda", "minutes"] }, mode: { type: "string", enum: ["lexical", "hybrid"] }, limit: { type: "integer", minimum: 1, maximum: 50 } }, required: ["query"] },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   {
     name: "search_legislative_actions", title: "Search legislative actions",
     description: "Search parsed legislative files and attached roll calls. Recorded positions apply to actions, not automatically to the underlying policy.",
-    inputSchema: { type: "object", properties: { query: { type: "string" }, voter: { type: "string" }, position: { type: "string", enum: ["aye", "no", "absent", "excused"] }, fromYear: { type: "integer", minimum: 2012 }, toYear: { type: "integer", minimum: 2012 }, finalOnly: { type: "boolean" }, limit: { type: "integer", minimum: 1, maximum: 50 } }, required: ["query"] },
+    inputSchema: { type: "object", properties: { query: { type: "string" }, voter: { type: "string" }, position: { type: "string", enum: ["aye", "no", "absent", "excused"] }, fromYear: { type: "integer", minimum: 1996 }, toYear: { type: "integer", minimum: 1996 }, finalOnly: { type: "boolean" }, limit: { type: "integer", minimum: 1, maximum: 50 } }, required: ["query"] },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   {
@@ -97,7 +97,7 @@ async function callTool(name: string, input: Record<string, unknown>) {
     const query = requiredString(input.query, "query", 2, 300);
     const voter = typeof input.voter === "string" ? input.voter.trim() : null;
     const position = ["aye", "no", "absent", "excused"].includes(String(input.position)) ? input.position as "aye" | "no" | "absent" | "excused" : null;
-    return searchLegislativeItems({ query, voter, voterKey: voter?.toLowerCase() ?? null, position, final: input.finalOnly === true, groupBy: "file", fromYear: optionalYear(input.fromYear) ?? 2012, toYear: optionalYear(input.toYear) ?? new Date().getUTCFullYear(), limit: boundedInt(input.limit, 20, 1, 50) });
+    return searchLegislativeItems({ query, voter, voterKey: voter?.toLowerCase() ?? null, position, final: input.finalOnly === true, groupBy: "file", fromYear: optionalYear(input.fromYear) ?? 1996, toYear: optionalYear(input.toYear) ?? new Date().getUTCFullYear(), limit: boundedInt(input.limit, 20, 1, 50) });
   }
   if (name === "get_document_evidence") {
     const document = await getDocumentEvidence(requiredString(input.documentId, "documentId", 1, 30));
@@ -123,14 +123,14 @@ async function callTool(name: string, input: Record<string, unknown>) {
 
 function aggregateOptions(input: Record<string, unknown>) {
   const position = ["aye", "no", "absent", "excused"].includes(String(input.position)) ? input.position as "aye" | "no" | "absent" | "excused" : null;
-  return { voter: requiredString(input.voter, "voter", 2, 100), position, fromYear: optionalYear(input.fromYear) ?? 2012, toYear: optionalYear(input.toYear) ?? new Date().getUTCFullYear(), finalOnly: input.finalOnly === true, groupBy: input.groupBy === "roll-call" ? "roll-call" as const : "file" as const, limit: boundedInt(input.limit, 100, 1, 1000) };
+  return { voter: requiredString(input.voter, "voter", 2, 100), position, fromYear: optionalYear(input.fromYear) ?? 1996, toYear: optionalYear(input.toYear) ?? new Date().getUTCFullYear(), finalOnly: input.finalOnly === true, groupBy: input.groupBy === "roll-call" ? "roll-call" as const : "file" as const, limit: boundedInt(input.limit, 100, 1, 1000) };
 }
 
 function aggregateSchema(housing: boolean) {
-  return { type: "object", properties: { voter: { type: "string" }, position: { type: "string", enum: ["aye", "no", "absent", "excused"] }, fromYear: { type: "integer", minimum: 2012 }, toYear: { type: "integer", minimum: 2012 }, finalOnly: { type: "boolean" }, ...(!housing ? { groupBy: { type: "string", enum: ["file", "roll-call"] } } : {}), limit: { type: "integer", minimum: 1, maximum: 1000 } }, required: ["voter"] };
+  return { type: "object", properties: { voter: { type: "string" }, position: { type: "string", enum: ["aye", "no", "absent", "excused"] }, fromYear: { type: "integer", minimum: 1996 }, toYear: { type: "integer", minimum: 1996 }, finalOnly: { type: "boolean" }, ...(!housing ? { groupBy: { type: "string", enum: ["file", "roll-call"] } } : {}), limit: { type: "integer", minimum: 1, maximum: 1000 } }, required: ["voter"] };
 }
 function requiredString(value: unknown, name: string, min: number, max: number) { if (typeof value !== "string" || value.trim().length < min || value.trim().length > max) throw new Error(`${name} must be ${min} to ${max} characters`); return value.trim(); }
-function optionalYear(value: unknown) { if (value === undefined || value === null) return null; const year = Number(value); if (!Number.isInteger(year) || year < 2012 || year > 2100) throw new Error("year must be from 2012 through 2100"); return year; }
+function optionalYear(value: unknown) { if (value === undefined || value === null) return null; const year = Number(value); if (!Number.isInteger(year) || year < 1996 || year > 2100) throw new Error("year must be from 1996 through 2100"); return year; }
 function boundedInt(value: unknown, fallback: number, min: number, max: number) { const number = value === undefined ? fallback : Number(value); if (!Number.isInteger(number) || number < min || number > max) throw new Error(`integer must be ${min} through ${max}`); return number; }
 function isObject(value: unknown): value is Record<string, unknown> { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
 function allowedOrigin(origin: string) { try { const url = new URL(origin); return url.protocol === "https:" || ((url.hostname === "localhost" || url.hostname === "127.0.0.1") && url.protocol === "http:"); } catch { return false; } }

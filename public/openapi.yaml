@@ -24,7 +24,7 @@ paths:
           schema: { type: string, enum: [json, md] }
       responses:
         "200":
-          description: A compact evidence bundle with structured-record or page anchors and official PDF citations.
+          description: A compact evidence bundle with structured-record or page anchors and official City source citations.
           content:
             application/json:
               schema:
@@ -43,16 +43,16 @@ paths:
           schema: { type: string, minLength: 2, maxLength: 300 }
         - name: year
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026 }
+          schema: { type: integer, minimum: 1996, maximum: 2026 }
         - name: kind
           in: query
           schema: { type: string, enum: [agenda, minutes] }
         - name: from
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026 }
+          schema: { type: integer, minimum: 1996, maximum: 2026 }
         - name: to
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026 }
+          schema: { type: integer, minimum: 1996, maximum: 2026 }
         - name: type
           in: query
           schema: { type: string, enum: [all, legislation, votes, comments, pages], default: all }
@@ -112,10 +112,10 @@ paths:
           schema: { type: string, enum: [none, file, matter], default: none }
         - name: from
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2012 }
+          schema: { type: integer, minimum: 1996, maximum: 2026, default: 1996 }
         - name: to
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2026 }
+          schema: { type: integer, minimum: 1996, maximum: 2026, default: 2026 }
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
@@ -146,10 +146,10 @@ paths:
           schema: { type: string, maxLength: 80 }
         - name: from
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2012 }
+          schema: { type: integer, minimum: 1996, maximum: 2026, default: 1996 }
         - name: to
           in: query
-          schema: { type: integer, minimum: 2012, maximum: 2026, default: 2026 }
+          schema: { type: integer, minimum: 1996, maximum: 2026, default: 2026 }
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
@@ -173,8 +173,8 @@ paths:
       parameters:
         - { name: voter, in: query, required: true, schema: { type: string } }
         - { name: position, in: query, schema: { type: string, enum: [aye, no, absent, excused] } }
-        - { name: from, in: query, schema: { type: integer, minimum: 2012 } }
-        - { name: to, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: from, in: query, schema: { type: integer, minimum: 1996 } }
+        - { name: to, in: query, schema: { type: integer, minimum: 1996 } }
         - { name: final, in: query, schema: { type: boolean, default: false } }
         - { name: groupBy, in: query, schema: { type: string, enum: [file, roll-call], default: file } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
@@ -188,8 +188,8 @@ paths:
       parameters:
         - { name: voter, in: query, required: true, schema: { type: string } }
         - { name: position, in: query, schema: { type: string, enum: [aye, no, absent, excused] } }
-        - { name: from, in: query, schema: { type: integer, minimum: 2012 } }
-        - { name: to, in: query, schema: { type: integer, minimum: 2012 } }
+        - { name: from, in: query, schema: { type: integer, minimum: 1996 } }
+        - { name: to, in: query, schema: { type: integer, minimum: 1996 } }
         - { name: final, in: query, schema: { type: boolean, default: false } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
       responses:

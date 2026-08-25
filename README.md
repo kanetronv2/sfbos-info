@@ -22,6 +22,18 @@ The PDF corpus is intentionally excluded from Git and Vercel deployments. Rebuil
 
 Files are organized under `data/full-board-meetings/{agendas,minutes}/{year}`.
 
+The City also maintains a legacy full-board catalog from before 2012. Much of that archive is
+official HTML rather than PDF. Backfill those source records without copying their contents into
+Postgres with:
+
+```bash
+npm run db:legacy-catalog
+```
+
+The usable official listings reach 1996. The City catalog has missing or malformed listings for
+2003 through 2005 and does not publish every document type in some earlier years; the backfill
+records only verifiable links.
+
 ## Production index
 
 Provision a Neon Postgres integration in Vercel and copy `.env.example` to `.env.local` with the injected connection string. Then run:

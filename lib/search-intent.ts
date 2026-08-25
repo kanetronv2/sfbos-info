@@ -1,7 +1,7 @@
 import type { SearchResultType } from "./types";
 import type { VotePosition } from "./item-types";
 
-export const MIN_ARCHIVE_YEAR = 2012;
+export const MIN_ARCHIVE_YEAR = 1996;
 export const MAX_ARCHIVE_YEAR = 2026;
 
 export const supervisorNames = [

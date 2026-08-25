@@ -5,7 +5,7 @@ const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 300;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
-const MIN_YEAR = 2012;
+const MIN_YEAR = 1996;
 const MAX_YEAR = 2026;
 
 export async function handleItemSearch(request: Request, forceMarkdown = false) {

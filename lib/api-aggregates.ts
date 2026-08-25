@@ -9,9 +9,9 @@ export async function handleAggregate(request: Request, housing: boolean) {
   const position = positionValue && ["aye", "no", "absent", "excused"].includes(positionValue)
     ? positionValue as VotePosition : null;
   if (positionValue && !position) return error("position must be aye, no, absent, or excused");
-  const fromYear = parseYear(url.searchParams.get("from"), 2012);
+  const fromYear = parseYear(url.searchParams.get("from"), 1996);
   const toYear = parseYear(url.searchParams.get("to"), new Date().getUTCFullYear());
-  if (!fromYear || !toYear || fromYear > toYear) return error("from and to must be valid years from 2012 onward");
+  if (!fromYear || !toYear || fromYear > toYear) return error("from and to must be valid years from 1996 onward");
   const limit = Number(url.searchParams.get("limit") ?? 100);
   if (!Number.isInteger(limit) || limit < 1 || limit > 1000) return error("limit must be 1 through 1000");
   const finalOnly = ["1", "true"].includes(url.searchParams.get("final") ?? "");
@@ -33,7 +33,7 @@ export async function handleAggregate(request: Request, housing: boolean) {
 function parseYear(value: string | null, fallback: number) {
   if (!value) return fallback;
   const year = Number(value);
-  return Number.isInteger(year) && year >= 2012 && year <= 2100 ? year : null;
+  return Number.isInteger(year) && year >= 1996 && year <= 2100 ? year : null;
 }
 
 function error(message: string) {

@@ -33,7 +33,7 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   }
 
   const year = parseYear(rawYear);
-  if (rawYear && year === null) return errorResponse("year must be an integer from 2012 through 2026", markdown);
+  if (rawYear && year === null) return errorResponse("year must be an integer from 1996 through 2026", markdown);
 
   const kind = parseKind(rawKind);
   if (rawKind && kind === null) return errorResponse("kind must be agenda or minutes", markdown);
@@ -47,7 +47,7 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   const fromYear = parseYear(rawFrom);
   const toYear = parseYear(rawTo);
   if ((rawFrom && parseYear(rawFrom) === null) || (rawTo && parseYear(rawTo) === null)) {
-    return errorResponse("from and to must be years from 2012 through 2026", markdown);
+    return errorResponse("from and to must be years from 1996 through 2026", markdown);
   }
   if (fromYear !== null && toYear !== null && fromYear > toYear) return errorResponse("from must be less than or equal to to", markdown);
   const position = parsePosition(rawPosition);
@@ -66,7 +66,7 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
 function parseYear(value: string | null) {
   if (!value) return null;
   const year = Number(value);
-  return Number.isInteger(year) && year >= 2012 && year <= 2026 ? year : null;
+  return Number.isInteger(year) && year >= 1996 && year <= 2026 ? year : null;
 }
 
 function parseKind(value: string | null): DocumentKind | null {
@@ -177,7 +177,7 @@ function toMarkdown(response: SearchResponse) {
 
   lines.push(
     "---",
-    "Results are extracted-text matches, not an answer by themselves. Verify conclusions, votes, and names against the linked official PDF.",
+    "Results are extracted-text matches, not an answer by themselves. Verify conclusions, votes, and names against the linked official City source.",
     "",
   );
   return lines.join("\n");

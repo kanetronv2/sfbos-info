@@ -1,6 +1,6 @@
 # sfbos.info
 
-> Full-text search across San Francisco Board of Supervisors agendas and minutes from 2012 onward. Results link to official City source PDFs.
+> Full-text search across San Francisco Board of Supervisors agendas and minutes from 2012 onward, plus available official-source catalog records reaching back to 1996. The legacy City catalog has known gaps from 2003 through 2005. Results link to official City PDFs or legacy HTML records.
 
 This is a provider-neutral interface. The same Markdown and JSON endpoints are intended for any
 language model, agent, search engine, researcher, or application without preferential treatment.
@@ -80,11 +80,11 @@ Example:
 https://sfbos.info/api/search.md?q=who+voted+against+housing+in+2018&type=votes&limit=50
 
 Important: results are evidence, not a synthesized answer. Read the relevant extracted-text page,
-follow the official PDF link, distinguish proposals from final actions, avoid double-counting repeated
+follow the official City source link, distinguish proposals from final actions, avoid double-counting repeated
 votes or findings, and cite both the page-addressable evidence and official document when answering.
 
 Documentation:
-- https://sfbos.info/documents (complete PDF archive)
+- https://sfbos.info/documents (complete indexed document catalog)
 - https://sfbos.info/supervisors (reconciled supervisor profiles)
 - https://sfbos.info/api/aggregates/votes?voter=Chan&position=no
 - https://sfbos.info/api/aggregates/housing?voter=Chan&position=no

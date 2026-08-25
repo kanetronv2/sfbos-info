@@ -14,6 +14,7 @@ export interface ArchiveDocument {
   officialUrl: string;
   transcriptPath: string;
   pageCount: number;
+  sourceFormat: "pdf" | "html";
 }
 
 export interface EvidencePage {
@@ -48,6 +49,7 @@ interface DatabaseRow {
   title: string;
   official_url: string;
   page_count: number;
+  source_format: "pdf" | "html";
 }
 
 interface PageRow {
@@ -78,7 +80,8 @@ export async function listDocuments(): Promise<ArchiveDocument[]> {
         kind,
         title,
         official_url,
-        page_count
+        page_count,
+        source_format
       FROM documents
       ORDER BY meeting_date DESC, CASE kind WHEN 'agenda' THEN 1 ELSE 2 END, id DESC
     `,
@@ -94,6 +97,7 @@ export async function listDocuments(): Promise<ArchiveDocument[]> {
     officialUrl: row.official_url,
     transcriptPath: documentPath(row.id, row.meeting_date, row.kind),
     pageCount: row.page_count,
+    sourceFormat: row.source_format,
   }));
 }
 
@@ -102,7 +106,7 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
   const sql = neon(process.env.DATABASE_URL);
   const [document] = (await sql.query(
     `
-      SELECT id::text, meeting_date::text, year, kind, title, official_url, page_count
+      SELECT id::text, meeting_date::text, year, kind, title, official_url, page_count, source_format
       FROM documents
       WHERE id = $1
       LIMIT 1
@@ -184,6 +188,7 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
     officialUrl: document.official_url,
     transcriptPath: documentPath(document.id, document.meeting_date, document.kind),
     pageCount: document.page_count,
+    sourceFormat: document.source_format,
     pages: pageRows.map((page) => ({ pageNumber: page.page_number, content: page.content })),
     items: itemRows.map((item) => ({
       id: item.id,

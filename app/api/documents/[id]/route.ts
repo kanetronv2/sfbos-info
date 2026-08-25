@@ -62,11 +62,14 @@ function toMarkdown(
     "",
     `- Meeting date: ${document.meetingDate}`,
     `- Document type: ${document.kind}`,
-    `- Pages in official PDF: ${document.pageCount}`,
+    `- Source format: ${document.sourceFormat.toUpperCase()}`,
+    `- Extracted pages: ${document.pageCount}`,
     `- [Canonical HTML transcript](${htmlUrl})`,
-    `- [Authoritative City PDF](${document.officialUrl})`,
+    `- [Authoritative City source](${document.officialUrl})`,
     "",
-    "> This text was extracted for search and accessibility. The linked City PDF is the authoritative public record.",
+    document.pageCount
+      ? "> This text was extracted for search and accessibility. The linked City source is the authoritative public record."
+      : "> This legacy document is cataloged, but extracted text is not yet available. Follow the linked City source for the public record.",
     "",
   ];
 

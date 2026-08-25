@@ -3,6 +3,8 @@ import { getSiteUrl } from "@/lib/site-url";
 import { listDocuments } from "@/lib/documents";
 import { listSupervisors } from "@/lib/supervisors";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const documents = await listDocuments();

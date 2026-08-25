@@ -91,7 +91,10 @@ const cases = [
   {
     name: "data-quality coverage",
     path: "/api/quality",
-    test: (body) => body.metrics?.documents === 1149 && body.metrics?.documents_without_versions === 0,
+    test: (body) =>
+      body.metrics?.documents >= 2131 &&
+      body.metrics?.catalog_only_documents >= 982 &&
+      body.metrics?.documents_without_versions === 0,
   },
 ];
 

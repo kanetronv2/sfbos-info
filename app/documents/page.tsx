@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { listDocuments } from "@/lib/documents";
 import { getSiteUrl } from "@/lib/site-url";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "San Francisco Board of Supervisors PDF Archive",
-  description: "Browse every indexed San Francisco Board of Supervisors agenda and meeting-minutes PDF from 2012 onward, with searchable HTML transcripts and official City sources.",
+  title: "San Francisco Board of Supervisors Document Archive",
+  description: "Browse the San Francisco Board of Supervisors agenda and meeting-minutes catalog from 1996 onward, with official City sources and searchable transcripts where available.",
   alternates: { canonical: "/documents" },
   openGraph: {
     type: "website",
     url: "/documents",
-    title: "San Francisco Board of Supervisors PDF Archive",
-    description: "Agendas, meeting minutes, searchable transcripts, and official City source PDFs from 2012 onward.",
+    title: "San Francisco Board of Supervisors Document Archive",
+    description: "Agendas, meeting minutes, official City source documents, and searchable transcripts from 1996 onward.",
   },
 };
 
@@ -31,7 +32,7 @@ export default async function DocumentsPage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "San Francisco Board of Supervisors PDF Archive",
+    name: "San Francisco Board of Supervisors Document Archive",
     description: metadata.description,
     url: `${siteUrl}/documents`,
     mainEntity: {
@@ -49,29 +50,21 @@ export default async function DocumentsPage() {
 
   return (
     <div className="archive-shell">
-      <header className="topbar">
-        <Link href="/" className="wordmark" aria-label="SF BOS Search home">
-          <span className="prompt-mark" aria-hidden="true">&gt;_</span>
-          <span>sfbos.info</span>
-        </Link>
-        <nav aria-label="Primary navigation">
-          <Link href="/">SEARCH</Link>
-          <Link href="/supervisors">SUPERVISORS</Link>
-          <Link href="/api">API</Link>
-          <a href="/llms.txt">FOR MODELS</a>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <main className="archive-main">
-        <p className="docs-kicker">OFFICIAL SOURCE LINKS · COMPLETE INDEX</p>
-        <h1>PDF archive.</h1>
+        <p className="docs-kicker">OFFICIAL SOURCE LINKS · PUBLIC CATALOG</p>
+        <h1>Document archive.</h1>
         <p className="archive-lede">
-          Every agenda and minutes PDF in the index, ordered newest first. Each HTML text view links
-          back to the authoritative San Francisco government document.
+          The official agenda and minutes catalog, ordered newest first. Records from 2010 onward
+          are generally PDFs; much of the older City archive was published as HTML. Searchable text
+          views are provided where extraction is complete. The legacy City catalog has missing or
+          malformed listings for 2003 through 2005 and does not publish every document type in some
+          earlier years.
         </p>
 
         <div className="archive-stats" aria-label="Archive statistics">
-          <span><strong>{documents.length.toLocaleString()}</strong> PDFs</span>
+          <span><strong>{documents.length.toLocaleString()}</strong> documents</span>
           <span><strong>{agendaCount.toLocaleString()}</strong> agendas</span>
           <span><strong>{minutesCount.toLocaleString()}</strong> minutes</span>
           <span><strong>{years.size}</strong> years</span>
@@ -87,7 +80,7 @@ export default async function DocumentsPage() {
               <section key={year} id={String(year)} className="archive-year">
                 <header>
                   <h2>{year}</h2>
-                  <span>{yearDocuments.length} PDFs</span>
+                  <span>{yearDocuments.length} documents</span>
                 </header>
                 <ol>
                   {yearDocuments.map((document) => (
@@ -97,9 +90,9 @@ export default async function DocumentsPage() {
                       <Link href={document.transcriptPath}>
                         {document.title}
                       </Link>
-                      <span className="page-count">{document.pageCount || "N/A"} pp.</span>
+                      <span className="page-count">{document.pageCount ? `${document.pageCount} pp.` : "CATALOG"}</span>
                       <a className="archive-source-link" href={document.officialUrl} target="_blank" rel="noreferrer">
-                        PDF ↗
+                        {document.sourceFormat.toUpperCase()} ↗
                       </a>
                     </li>
                   ))}

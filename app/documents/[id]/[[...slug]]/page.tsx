@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { documentMarkdownPath, documentSlug, documentUrl } from "@/lib/document-url";
 import { getDocumentEvidence } from "@/lib/documents";
 import { listSupervisorNameLinks } from "@/lib/supervisors";
+import { SiteHeader } from "@/components/site-header";
 import { TargetDetails } from "@/components/target-details";
 import { SupervisorLinkedText } from "@/components/supervisor-linked-text";
 
@@ -19,15 +20,15 @@ export async function generateMetadata({ params }: EvidencePageProps): Promise<M
   if (!document) return { title: "Document not found" };
   return {
     title: document.title,
-    description: `Extracted text for the ${document.meetingDate} Board of Supervisors ${document.kind}, with a link to the official PDF.`,
+    description: `${document.pageCount ? "Extracted text and " : "Catalog record with an "}official source link for the ${document.meetingDate} Board of Supervisors ${document.kind}.`,
     alternates: {
       canonical: document.transcriptPath,
-      types: { "text/markdown": documentMarkdownPath(document.id, document.meetingDate, document.kind) },
+      ...(document.pageCount ? { types: { "text/markdown": documentMarkdownPath(document.id, document.meetingDate, document.kind) } } : {}),
     },
     openGraph: {
       type: "article",
       title: document.title,
-      description: `Page-by-page extracted text and official source for this Board of Supervisors ${document.kind}.`,
+      description: `${document.pageCount ? "Page-by-page extracted text and " : "Catalog record with an "}official source for this Board of Supervisors ${document.kind}.`,
       url: document.transcriptPath,
       publishedTime: `${document.meetingDate}T00:00:00Z`,
     },
@@ -51,19 +52,19 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
       "@context": "https://schema.org",
       "@type": "WebPage",
       name: document.title,
-      description: `Page-by-page extracted text for the ${document.meetingDate} San Francisco Board of Supervisors ${document.kind}.`,
+      description: `${document.pageCount ? "Page-by-page extracted text" : "Official source catalog record"} for the ${document.meetingDate} San Francisco Board of Supervisors ${document.kind}.`,
       url: documentPageUrl,
       datePublished: document.meetingDate,
       isPartOf: {
         "@type": "CollectionPage",
-        name: "San Francisco Board of Supervisors PDF Archive",
+        name: "San Francisco Board of Supervisors Document Archive",
         url: `${documentPageUrl.split("/documents/")[0]}/documents`,
       },
       mainEntity: {
         "@type": "DigitalDocument",
         name: document.title,
         datePublished: document.meetingDate,
-        encodingFormat: "application/pdf",
+        encodingFormat: document.sourceFormat === "pdf" ? "application/pdf" : "text/html",
         url: document.officialUrl,
         publisher: {
           "@type": "GovernmentOrganization",
@@ -78,7 +79,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
         {
           "@type": "ListItem",
           position: 1,
-          name: "PDF archive",
+          name: "Document archive",
           item: `${documentPageUrl.split("/documents/")[0]}/documents`,
         },
         {
@@ -100,22 +101,11 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
   return (
     <div className="evidence-shell">
       <TargetDetails />
-      <header className="topbar">
-        <Link href="/" className="wordmark" aria-label="SF BOS Search home">
-          <span className="prompt-mark" aria-hidden="true">&gt;_</span>
-          <span>sfbos.info</span>
-        </Link>
-        <nav aria-label="Primary navigation">
-          <Link href="/">SEARCH</Link>
-          <Link href="/documents">PDFS</Link>
-          <Link href="/supervisors">SUPERVISORS</Link>
-          <Link href="/api">API</Link>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <main className="evidence-main">
         <nav className="evidence-breadcrumb" aria-label="Breadcrumb">
-          <Link href="/documents">PDF archive</Link>
+          <Link href="/documents">Document archive</Link>
           <span>/</span>
           <Link href={`/documents#${document.year}`}>{document.year}</Link>
           <span>/</span>
@@ -126,22 +116,23 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
           <div className="evidence-labels">
             <span className={`document-kind ${document.kind}`}>{document.kind}</span>
             <time dateTime={document.meetingDate}>{formatDate(document.meetingDate)}</time>
-            <span>{document.pageCount} pages</span>
+            <span>{document.pageCount ? `${document.pageCount} pages` : "catalog record"}</span>
           </div>
           <h1>{document.title}</h1>
           <div className="evidence-actions">
             <a className="source-button" href={document.officialUrl} target="_blank" rel="noreferrer">
-              VIEW OFFICIAL PDF ↗
+              VIEW OFFICIAL {document.sourceFormat.toUpperCase()} ↗
             </a>
-            <a href={documentMarkdownPath(document.id, document.meetingDate, document.kind)}>
-              VIEW AS MARKDOWN ↗
-            </a>
-            <Link href={`/documents/${document.id}/versions`}>VERSIONS / DIFF ↗</Link>
-            <a href="#extracted-text">JUMP TO EXTRACTED TEXT ↓</a>
+            {document.pageCount ? <>
+              <a href={documentMarkdownPath(document.id, document.meetingDate, document.kind)}>VIEW AS MARKDOWN ↗</a>
+              <Link href={`/documents/${document.id}/versions`}>VERSIONS / DIFF ↗</Link>
+              <a href="#extracted-text">JUMP TO EXTRACTED TEXT ↓</a>
+            </> : null}
           </div>
           <p className="evidence-notice">
-            This is a page-by-page text extraction provided for search and accessibility. Extraction
-            errors may be present. The linked official PDF is the authoritative public record.
+            {document.pageCount
+              ? `This is a page-by-page text extraction provided for search and accessibility. Extraction errors may be present. The linked official ${document.sourceFormat.toUpperCase()} is the authoritative public record.`
+              : `This pre-2012 record is cataloged from the City's legacy archive. A local transcript has not yet been extracted. Follow the official ${document.sourceFormat.toUpperCase()} link for the authoritative public record.`}
           </p>
         </header>
 
@@ -209,7 +200,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
           </section>
         )}
 
-        <section id="extracted-text" className="extracted-text" aria-labelledby="extracted-text-title">
+        {document.pageCount ? <section id="extracted-text" className="extracted-text" aria-labelledby="extracted-text-title">
           <div className="section-heading">
             <div>
               <p className="docs-kicker">HTML TEXT VIEW</p>
@@ -231,7 +222,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                   <h3>Page {page.pageNumber}</h3>
                   <div>
                     <a href={`#page-${page.pageNumber}`} aria-label={`Link to page ${page.pageNumber}`}>#</a>
-                    <a href={document.officialUrl} target="_blank" rel="noreferrer">PDF ↗</a>
+                    <a href={document.officialUrl} target="_blank" rel="noreferrer">{document.sourceFormat.toUpperCase()} ↗</a>
                   </div>
                 </header>
                 <div className="page-text">
@@ -240,7 +231,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
               </section>
             ))}
           </article>
-        </section>
+        </section> : null}
       </main>
 
       <script

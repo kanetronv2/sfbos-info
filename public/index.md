@@ -1,14 +1,14 @@
 # SF BOS Search
 
-sfbos.info is an independent full-text index of San Francisco Board of Supervisors agendas and minutes from 2012 onward.
+sfbos.info is an independent full-text index of San Francisco Board of Supervisors agendas and minutes from 2012 onward, with available official-source catalog records reaching back to 1996. The legacy City catalog has known gaps from 2003 through 2005.
 
 ## Ask a question with the archive
 
 1. Send the complete question to `https://sfbos.info/api/query.md?q={URL_ENCODED_QUESTION}`.
-2. Use the returned legislative files, roll calls, extracted facts, transcript anchors, and official PDFs as an evidence bundle.
+2. Use the returned legislative files, roll calls, extracted facts, transcript anchors, and official City sources as an evidence bundle.
 3. Read the action attached to every roll call; an Aye or No has no meaning without it.
 4. Use the specialized endpoints below when explicit filters or exhaustive follow-up searches are needed.
-5. Follow the result's page-addressable evidence, then open the official PDF and verify decisive claims before answering.
+5. Follow the result's page-addressable evidence, then open the official City source and verify decisive claims before answering.
 
 ## API
 

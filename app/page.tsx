@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: { absolute: "San Francisco Board of Supervisors Search" },
   description:
-    "Search San Francisco Board of Supervisors agendas, minutes, legislative files, recorded votes, and public comments from 2012 onward.",
+    "Search San Francisco Board of Supervisors agendas, minutes, legislative files, recorded votes, and public comments, with an official document catalog from 1996 onward.",
   alternates: {
     canonical: "/",
     types: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "San Francisco Board of Supervisors Search",
     description:
-      "Search agendas, minutes, legislative files, recorded votes, and public comments from 2012 onward.",
+      "Search agendas, minutes, legislative files, recorded votes, and public comments, with an official document catalog from 1996 onward.",
   },
 };
 
@@ -47,7 +47,7 @@ export default function HomePage() {
       description:
         "Page-level extracted text, legislative files, recorded roll calls, and public-comment summaries from San Francisco Board of Supervisors agendas and minutes.",
       url: siteUrl,
-      temporalCoverage: "2012/..",
+      temporalCoverage: "1996/..",
       spatialCoverage: {
         "@type": "Place",
         name: "San Francisco, California",

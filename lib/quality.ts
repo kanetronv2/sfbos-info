@@ -7,8 +7,10 @@ export async function getQualityReport() {
     sql.query(
       `SELECT
         (SELECT count(*)::int FROM documents) AS documents,
-        (SELECT count(*)::int FROM documents d WHERE NOT EXISTS (SELECT 1 FROM pages p WHERE p.document_id = d.id)) AS documents_without_pages,
-        (SELECT count(*)::int FROM documents d WHERE NOT EXISTS (SELECT 1 FROM document_versions v WHERE v.document_id = d.id)) AS documents_without_versions,
+        (SELECT count(*)::int FROM documents WHERE page_count > 0) AS indexed_documents,
+        (SELECT count(*)::int FROM documents WHERE page_count = 0) AS catalog_only_documents,
+        (SELECT count(*)::int FROM documents d WHERE d.page_count > 0 AND NOT EXISTS (SELECT 1 FROM pages p WHERE p.document_id = d.id)) AS documents_without_pages,
+        (SELECT count(*)::int FROM documents d WHERE d.page_count > 0 AND NOT EXISTS (SELECT 1 FROM document_versions v WHERE v.document_id = d.id)) AS documents_without_versions,
         (SELECT count(*)::int FROM legislative_items) AS legislative_items,
         (SELECT count(*)::int FROM legislative_items i WHERE NOT EXISTS (SELECT 1 FROM roll_calls rc WHERE rc.item_id = i.id)) AS items_without_roll_calls,
         (SELECT count(*)::int FROM roll_call_positions) AS recorded_positions,
@@ -46,6 +48,7 @@ export async function getQualityReport() {
       unresolvedPosition: "A name parsed from a roll call that has not been reconciled to a supervisor identity.",
       lowConfidenceSpan: "An extraction evidence span with confidence below 0.80.",
       legistarMatchedFile: "An internal file identifier reconciled to a Legistar MatterId.",
+      catalogOnlyDocument: "An official source record in the historical catalog whose text has not been extracted into the full-text index.",
     },
   };
 }

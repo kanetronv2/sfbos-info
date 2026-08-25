@@ -5,7 +5,7 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 const sql = neon(process.env.DATABASE_URL);
 const args = parseArguments(process.argv.slice(2));
-const fromYear = numberArg("from-year", 2012);
+const fromYear = numberArg("from-year", 1996);
 const toYear = numberArg("to-year", new Date().getUTCFullYear());
 const matterLimit = numberArg("legistar-limit", 250);
 const skipVersions = args.has("skip-versions");

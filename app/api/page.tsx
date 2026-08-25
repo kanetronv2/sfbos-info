@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { getSiteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -48,10 +49,7 @@ export default function ApiPage() {
 
   return (
     <div className="docs-shell">
-      <header className="docs-header">
-        <Link href="/" className="wordmark"><span className="prompt-mark">&gt;_</span> sfbos.info</Link>
-        <span>API / v2</span>
-      </header>
+      <SiteHeader />
       <main>
         <p className="docs-kicker">PUBLIC · READ-ONLY · CORS ENABLED</p>
         <h1>Search API</h1>
@@ -74,8 +72,8 @@ export default function ApiPage() {
           <h2><code>GET /api/search</code></h2>
           <div className="parameter-grid">
             <code>q</code><p>Required. Web-style search query, 2–300 characters.</p>
-            <code>year</code><p>Optional. Calendar year from 2012 through 2026.</p>
-            <code>from / to</code><p>Optional inclusive year range from 2012 through 2026.</p>
+            <code>year</code><p>Optional. Calendar year from 1996 through 2026.</p>
+            <code>from / to</code><p>Optional inclusive year range from 1996 through 2026.</p>
             <code>kind</code><p>Optional. <code>agenda</code> or <code>minutes</code>.</p>
             <code>type</code><p>Optional. <code>all</code>, <code>legislation</code>, <code>votes</code>, <code>comments</code>, or <code>pages</code>.</p>
             <code>supervisor</code><p>Optional supervisor surname. Natural-language questions can infer it.</p>
@@ -135,7 +133,7 @@ GET /api/changes?cursor=0&limit=250`}</code></pre>
             <code>position</code><p>Optional. <code>aye</code>, <code>no</code>, <code>absent</code>, or <code>excused</code>. Requires <code>voter</code>.</p>
             <code>final</code><p>Optional boolean. Restrict matches to roll calls classified as final actions.</p>
             <code>groupBy</code><p>Optional. <code>none</code>, <code>file</code>, or <code>matter</code> to collapse repeated readings and companion records.</p>
-            <code>from / to</code><p>Optional inclusive year range, 2012–2026.</p>
+            <code>from / to</code><p>Optional inclusive year range, 1996–2026.</p>
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
@@ -156,7 +154,7 @@ GET /api/changes?cursor=0&limit=250`}</code></pre>
           <div className="parameter-grid">
             <code>q</code><p>Required. Topic or phrase to search.</p>
             <code>speaker</code><p>Optional speaker-name filter.</p>
-            <code>from / to</code><p>Optional inclusive year range, 2012–2026.</p>
+            <code>from / to</code><p>Optional inclusive year range, 1996–2026.</p>
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
           </div>
           <pre><code>{commentExample}</code></pre>
@@ -179,7 +177,7 @@ GET /api/changes?cursor=0&limit=250`}</code></pre>
         <section>
           <h2>Discovery</h2>
           <ul>
-            <li><Link href="/documents">/documents: complete PDF archive</Link></li>
+            <li><Link href="/documents">/documents: complete indexed document catalog</Link></li>
             <li><Link href="/supervisors">/supervisors: reconciled recorded-position profiles</Link></li>
             <li><Link href="/quality">/quality: coverage and parser health</Link></li>
             <li><Link href="/api/snapshots">/api/snapshots</Link></li>

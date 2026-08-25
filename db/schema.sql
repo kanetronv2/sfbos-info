@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS documents (
   id bigserial PRIMARY KEY,
   meeting_date date NOT NULL,
-  year integer NOT NULL CHECK (year BETWEEN 2012 AND 2100),
+  year integer NOT NULL CHECK (year BETWEEN 1900 AND 2100),
   kind text NOT NULL CHECK (kind IN ('agenda', 'minutes')),
   title text NOT NULL,
   official_url text NOT NULL UNIQUE,
@@ -13,6 +13,13 @@ CREATE TABLE IF NOT EXISTS documents (
   page_count integer NOT NULL DEFAULT 0,
   indexed_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_year_check;
+ALTER TABLE documents ADD CONSTRAINT documents_year_check CHECK (year BETWEEN 1900 AND 2100);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_format text NOT NULL DEFAULT 'pdf';
+ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_source_format_check;
+ALTER TABLE documents ADD CONSTRAINT documents_source_format_check CHECK (source_format IN ('pdf', 'html'));
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS cataloged_at timestamptz NOT NULL DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS documents_meeting_date_idx
   ON documents (meeting_date DESC);
@@ -40,7 +47,7 @@ CREATE INDEX IF NOT EXISTS pages_document_id_idx
   ON pages (document_id);
 
 COMMENT ON TABLE documents IS
-  'Official San Francisco Board of Supervisors agenda and minutes PDFs.';
+  'Official San Francisco Board of Supervisors agenda and minutes source documents.';
 
 COMMENT ON TABLE pages IS
   'Page-level text extracted from documents with pdftotext.';

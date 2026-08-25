@@ -1,7 +1,7 @@
 import { searchPublicComments } from "./comment-search";
 import type { PublicCommentResponse } from "./comment-types";
 
-const MIN_YEAR = 2012;
+const MIN_YEAR = 1996;
 const MAX_YEAR = 2026;
 const MAX_LIMIT = 50;
 
