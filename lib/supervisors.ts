@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { cache } from "react";
 import { documentFileUrl, documentMarkdownExcerptUrl } from "./document-url";
+import { getSupervisorDistrict } from "./supervisor-districts";
 
 export interface SupervisorSummary {
   slug: string;
@@ -67,14 +68,18 @@ export const listSupervisors = cache(async (): Promise<SupervisorSummary[]> => {
      LEFT JOIN legislative_items i ON i.id = rc.item_id
      LEFT JOIN documents d ON d.id = i.document_id
      GROUP BY s.id
-     ORDER BY s.family_name, s.display_name`,
+     ORDER BY
+       s.active DESC,
+       CASE WHEN s.active AND s.district ~ '^[0-9]+$' THEN s.district::int END NULLS LAST,
+       s.family_name,
+       s.display_name`,
     [],
   );
   return rows.map((row) => ({
     slug: row.slug,
     displayName: row.display_name,
     familyName: row.family_name,
-    district: row.district,
+    district: getSupervisorDistrict(row.slug, row.district),
     active: row.active,
     firstRecordedDate: row.first_recorded_date,
     lastRecordedDate: row.last_recorded_date,
@@ -177,7 +182,7 @@ export const getSupervisor = cache(async (slug: string): Promise<SupervisorProfi
     slug: supervisor.slug,
     displayName: supervisor.display_name,
     familyName: supervisor.family_name,
-    district: supervisor.district,
+    district: getSupervisorDistrict(supervisor.slug, supervisor.district),
     active: supervisor.active,
     firstRecordedDate: firstDates[0] ?? null,
     lastRecordedDate: lastDates.at(-1) ?? null,

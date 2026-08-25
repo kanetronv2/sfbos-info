@@ -144,6 +144,18 @@ const contactPassed = supervisorResponse.ok &&
 console.log(`${contactPassed ? "PASS" : "FAIL"}  current supervisor contact profile`);
 if (!contactPassed) failures += 1;
 
+const supervisorIndexResponse = await fetch(`${baseUrl}/supervisors`);
+const supervisorIndexHtml = await supervisorIndexResponse.text();
+const currentBadgeCount = (supervisorIndexHtml.match(/class="current-badge"/g) ?? []).length;
+const districtCount = (supervisorIndexHtml.match(/class="entity-district"/g) ?? []).length;
+const currentSupervisorsFirst = supervisorIndexResponse.ok &&
+  currentBadgeCount === 11 &&
+  districtCount === 36 &&
+  supervisorIndexHtml.indexOf("Connie Chan") < supervisorIndexHtml.indexOf("John Avalos") &&
+  !supervisorIndexHtml.includes("District unknown");
+console.log(`${currentSupervisorsFirst ? "PASS" : "FAIL"}  supervisor index current ordering and districts`);
+if (!currentSupervisorsFirst) failures += 1;
+
 const homeResponse = await fetch(baseUrl);
 const homeHtml = await homeResponse.text();
 const analyticsPassed = homeResponse.ok &&
@@ -162,5 +174,5 @@ if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 6} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 7} infrastructure smoke tests passed against ${baseUrl}.`);
 }

@@ -26,9 +26,13 @@ export default async function SupervisorsPage() {
           not policy positions or support for the underlying legislation.
         </p>
         <ol className="entity-list">
-          {supervisors.filter((supervisor) => supervisor.recordedPositions > 0).map((supervisor) => (
-            <li key={supervisor.slug}>
-              <Link href={`/supervisors/${supervisor.slug}`}>{supervisor.displayName}</Link>
+          {supervisors.map((supervisor) => (
+            <li key={supervisor.slug} className={supervisor.active ? "is-current" : undefined}>
+              <div className="entity-name">
+                <Link href={`/supervisors/${supervisor.slug}`}>{supervisor.displayName}</Link>
+                {supervisor.active && <span className="current-badge">CURRENT</span>}
+              </div>
+              <span className="entity-district">District {supervisor.district ?? "unknown"}</span>
               <span>{supervisor.firstRecordedDate ?? "unknown"} to {supervisor.lastRecordedDate ?? "unknown"}</span>
               <strong>{supervisor.recordedPositions.toLocaleString()} recorded positions</strong>
             </li>

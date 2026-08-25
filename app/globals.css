@@ -327,9 +327,13 @@ footer div:last-child { display: flex; gap: 14px; }
 
 .entity-list, .vote-evidence-list, .version-list { margin: 0; padding: 0; list-style: none; }
 .entity-list { border-top: 2px solid var(--ink); }
-.entity-list li { display: grid; grid-template-columns: minmax(180px, 1fr) 1fr auto; gap: 20px; align-items: baseline; padding: 16px 4px; border-bottom: 1px solid var(--line); }
+.entity-list li { display: grid; grid-template-columns: minmax(180px, 1fr) 74px minmax(150px, .8fr) auto; gap: 20px; align-items: baseline; padding: 16px 4px; border-bottom: 1px solid var(--line); }
+.entity-list li.is-current { padding-left: 13px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 4%, var(--panel)); }
+.entity-name { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; min-width: 0; }
 .entity-list a { font-size: 18px; font-weight: 700; text-underline-offset: 4px; }
 .entity-list span, .entity-list strong { color: var(--muted); font: 10px var(--mono); }
+.entity-list .current-badge { padding: 3px 6px; border: 1px solid var(--accent); color: var(--accent-dark); font: 700 8px var(--mono); letter-spacing: .08em; }
+.entity-district { white-space: nowrap; text-transform: uppercase; letter-spacing: .06em; }
 .position-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 55px; border: 1px solid var(--ink); background: var(--panel); }
 .position-grid div { display: grid; gap: 10px; padding: 20px; border-right: 1px solid var(--line); }
 .position-grid div:last-child { border-right: 0; }
@@ -370,7 +374,10 @@ footer div:last-child { display: flex; gap: 14px; }
 .docs-shell .diff-added { background: #17301d; }
 
 @media (max-width: 720px) {
-  .entity-list li { grid-template-columns: 1fr; gap: 7px; }
+  .entity-list li { grid-template-columns: 1fr auto; gap: 7px 14px; }
+  .entity-name { grid-column: 1 / -1; }
+  .entity-list li > span:not(.current-badge) { grid-column: 1; }
+  .entity-list li > strong { grid-column: 1 / -1; }
   .position-grid { grid-template-columns: repeat(2, 1fr); }
   .profile-contact { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
   .position-grid div:nth-child(2) { border-right: 0; }

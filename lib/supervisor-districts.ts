@@ -12,7 +12,50 @@ const districtNeighborhoods: Record<string, string[]> = {
   "11": ["Excelsior", "Ingleside", "Oceanview", "Merced Heights", "Ingleside Heights", "Mission Terrace", "Outer Mission", "Cayuga", "Crocker-Amazon"],
 };
 
+const supervisorDistricts: Record<string, string> = {
+  "aaron-peskin": "3",
+  "ahsha-safai": "11",
+  "alan-wong": "4",
+  "bilal-mahmood": "5",
+  "carmen-chu": "4",
+  "catherine-stefani": "2",
+  "christina-olague": "5",
+  "chyanne-chen": "11",
+  "connie-chan": "1",
+  "danny-sauter": "3",
+  "david-campos": "9",
+  "david-chiu": "3",
+  "dean-preston": "5",
+  "gordon-mar": "4",
+  "hillary-ronen": "9",
+  "jackie-fielder": "9",
+  "jane-kim": "6",
+  "jeff-sheehy": "8",
+  "joel-engardio": "4",
+  "john-avalos": "11",
+  "julie-christensen": "3",
+  "katy-tang": "4",
+  "london-breed": "5",
+  "malia-cohen": "10",
+  "mark-farrell": "2",
+  "matt-dorsey": "6",
+  "matt-haney": "6",
+  "myrna-melgar": "7",
+  "norman-yee": "7",
+  "rafael-mandelman": "8",
+  "sandra-fewer": "1",
+  "scott-wiener": "8",
+  "sean-elsbernd": "7",
+  "shamann-walton": "10",
+  "stephen-sherrill": "2",
+  "vallie-brown": "5",
+};
+
 export function getDistrictNeighborhoods(district: string | null): string[] {
   if (!district) return [];
   return districtNeighborhoods[district.replace(/^0+/, "")] ?? [];
+}
+
+export function getSupervisorDistrict(slug: string, district: string | null): string | null {
+  return district ?? supervisorDistricts[slug] ?? null;
 }

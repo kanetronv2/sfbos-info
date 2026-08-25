@@ -31,6 +31,20 @@ const fallbackContacts = new Map([
 const fetchedContacts = await fetchCurrentSupervisorContacts();
 const currentContacts = fetchedContacts.size ? fetchedContacts : fallbackContacts;
 const currentDistricts = new Map([...currentContacts].map(([slug, value]) => [slug, value.district]));
+const knownDistricts = new Map([
+  ["aaron-peskin", "3"], ["ahsha-safai", "11"], ["alan-wong", "4"],
+  ["bilal-mahmood", "5"], ["carmen-chu", "4"], ["catherine-stefani", "2"],
+  ["christina-olague", "5"], ["chyanne-chen", "11"], ["connie-chan", "1"],
+  ["danny-sauter", "3"], ["david-campos", "9"], ["david-chiu", "3"],
+  ["dean-preston", "5"], ["gordon-mar", "4"], ["hillary-ronen", "9"],
+  ["jackie-fielder", "9"], ["jane-kim", "6"], ["jeff-sheehy", "8"],
+  ["joel-engardio", "4"], ["john-avalos", "11"], ["julie-christensen", "3"],
+  ["katy-tang", "4"], ["london-breed", "5"], ["malia-cohen", "10"],
+  ["mark-farrell", "2"], ["matt-dorsey", "6"], ["matt-haney", "6"],
+  ["myrna-melgar", "7"], ["norman-yee", "7"], ["rafael-mandelman", "8"],
+  ["sandra-fewer", "1"], ["scott-wiener", "8"], ["sean-elsbernd", "7"],
+  ["shamann-walton", "10"], ["stephen-sherrill", "2"], ["vallie-brown", "5"],
+]);
 const supervisors = [
   ["john-avalos", "John Avalos", "Avalos"], ["london-breed", "London Breed", "Breed"],
   ["vallie-brown", "Vallie Brown", "Brown"], ["david-campos", "David Campos", "Campos"],
@@ -52,7 +66,7 @@ const supervisors = [
   ["stephen-sherrill", "Stephen Sherrill", "Sherrill"], ["alan-wong", "Alan Wong", "Wong"],
 ].map(([slug, name, family]) => ({
   slug, name, family,
-  district: currentDistricts.get(slug) ?? null,
+  district: currentDistricts.get(slug) ?? knownDistricts.get(slug) ?? null,
   active: currentDistricts.has(slug),
   contact: currentContacts.get(slug) ?? null,
   aliases: slug === "aaron-peskin" ? ["Peskn"] : [],
