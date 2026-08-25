@@ -125,6 +125,16 @@ const transcriptLinksPassed = transcriptResponse.ok &&
 console.log(`${transcriptLinksPassed ? "PASS" : "FAIL"}  transcript supervisor profile links`);
 if (!transcriptLinksPassed) failures += 1;
 
+const structuredRowStart = transcriptHtml.indexOf('id="file-210920"');
+const structuredRowEnd = transcriptHtml.indexOf("</details>", structuredRowStart);
+const structuredRowHtml = transcriptHtml.slice(structuredRowStart, structuredRowEnd);
+const sourcePagePassed = structuredRowStart >= 0 &&
+  structuredRowHtml.includes("class=\"structured-source-link\"") &&
+  structuredRowHtml.includes("#page=17") &&
+  structuredRowHtml.includes('aria-label="Open PAGE 17 in the official PDF"');
+console.log(`${sourcePagePassed ? "PASS" : "FAIL"}  structured row official source page`);
+if (!sourcePagePassed) failures += 1;
+
 const supervisorResponse = await fetch(`${baseUrl}/supervisors/connie-chan`);
 const supervisorHtml = await supervisorResponse.text();
 const contactPassed = supervisorResponse.ok &&
@@ -146,5 +156,5 @@ if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 4} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 5} infrastructure smoke tests passed against ${baseUrl}.`);
 }

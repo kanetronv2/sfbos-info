@@ -296,6 +296,9 @@ footer div:last-child { display: flex; gap: 14px; }
 .structured-item summary > span, .structured-item summary > a { color: var(--muted); font: 9px var(--mono); letter-spacing: .06em; }
 .structured-item summary > strong { font-size: 13px; line-height: 1.45; }
 .structured-item summary > a { text-align: right; text-underline-offset: 3px; }
+.structured-source-link { text-decoration-color: var(--line); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.structured-source-link span { color: var(--accent-dark); font: 9px var(--mono); }
+.structured-source-link:hover { color: var(--accent-dark); text-decoration-color: var(--accent-dark); }
 .structured-item[open] summary { background: var(--panel); }
 .structured-votes { display: grid; gap: 1px; padding: 0 5px 16px 107px; }
 .structured-provenance { margin: -7px 5px 12px 107px; color: var(--muted); font: 9px var(--mono); letter-spacing: .05em; }
@@ -330,7 +333,7 @@ footer div:last-child { display: flex; gap: 14px; }
   .section-heading h2 { font-size: 25px; }
   .structured-records { margin-bottom: 58px; }
   .structured-item summary { grid-template-columns: 74px minmax(0, 1fr); gap: 8px 10px; }
-  .structured-item summary > a { grid-column: 1; text-align: left; }
+  .structured-item summary > a { grid-column: 1; text-align: left; line-height: 1.45; }
   .structured-item summary > strong { grid-column: 2; grid-row: 1 / span 2; }
   .structured-votes { padding-left: 5px; }
   .no-recorded-vote { padding-left: 17px; }

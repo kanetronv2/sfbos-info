@@ -159,9 +159,23 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                 <details key={item.id} id={`file-${item.fileNumber}`} className="structured-item">
                   <summary>
                     <span>FILE {item.fileNumber}</span>
-                    <strong>{item.title}</strong>
-                    <a href={`#page-${item.startPage}`}>
-                      {pageRange(item.startPage, item.endPage)}
+                    <strong>
+                      <a
+                        className="structured-source-link"
+                        href={officialSourcePage(document.officialUrl, item.startPage)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {item.title} <span aria-hidden="true">↗</span>
+                      </a>
+                    </strong>
+                    <a
+                      href={officialSourcePage(document.officialUrl, item.startPage)}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${pageRange(item.startPage, item.endPage)} in the official PDF`}
+                    >
+                      SOURCE {pageRange(item.startPage, item.endPage)} ↗
                     </a>
                   </summary>
                   <p className="structured-provenance">
@@ -255,6 +269,12 @@ function VoteLine({
 
 function pageRange(start: number, end: number) {
   return start === end ? `PAGE ${start}` : `PAGES ${start}-${end}`;
+}
+
+function officialSourcePage(officialUrl: string, page: number) {
+  const url = new URL(officialUrl);
+  url.hash = `page=${page}`;
+  return url.href;
 }
 
 function formatDate(value: string) {
