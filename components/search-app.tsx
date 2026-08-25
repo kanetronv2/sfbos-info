@@ -19,6 +19,7 @@ export function SearchApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const urlStateTimer = window.setTimeout(() => {
@@ -42,6 +43,7 @@ export function SearchApp() {
     return () => {
       window.clearTimeout(urlStateTimer);
       window.removeEventListener("keydown", onKeyDown);
+      requestRef.current?.abort();
     };
     // Initial URL state is intentionally read once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,6 +59,9 @@ export function SearchApp() {
 
     setLoading(true);
     setError("");
+    requestRef.current?.abort();
+    const requestController = new AbortController();
+    requestRef.current = requestController;
 
     const parameters = new URLSearchParams({ q: trimmedQuery });
     if (nextYear) parameters.set("year", nextYear);
@@ -64,15 +69,21 @@ export function SearchApp() {
     window.history.replaceState(null, "", `/?${parameters.toString()}`);
 
     try {
-      const request = await fetch(`/api/search?${parameters.toString()}`);
+      const request = await fetch(`/api/search?${parameters.toString()}`, {
+        signal: requestController.signal,
+      });
       const payload = (await request.json()) as SearchResponse & { error?: string };
       if (!request.ok) throw new Error(payload.error ?? "Search failed");
       setResponse(payload);
     } catch (searchError) {
+      if (searchError instanceof DOMException && searchError.name === "AbortError") return;
       setError(searchError instanceof Error ? searchError.message : "Search failed");
       setResponse(null);
     } finally {
-      setLoading(false);
+      if (requestRef.current === requestController) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
   }
 
@@ -89,7 +100,22 @@ export function SearchApp() {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <Link href="/" className="wordmark" aria-label="SF BOS Search home">
+        <Link
+          href="/"
+          className="wordmark"
+          aria-label="SF BOS Search home"
+          onClick={(event) => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            setQuery("");
+            setYear("");
+            setKind("");
+            setResponse(null);
+            setError("");
+            requestRef.current?.abort();
+            requestRef.current = null;
+            setLoading(false);
+          }}
+        >
           <span className="prompt-mark" aria-hidden="true">&gt;_</span>
           <span>sfbos.info</span>
         </Link>
