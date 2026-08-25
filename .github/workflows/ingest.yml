@@ -31,7 +31,8 @@ jobs:
           cache: npm
       - name: Install PDF text extractor
         run: sudo apt-get update && sudo apt-get install --yes poppler-utils
-      - run: npm ci
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
       - name: Migrate queue schema
         run: node scripts/migrate.mjs
       - name: Download current official agendas and minutes
