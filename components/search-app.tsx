@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { supervisorNames } from "@/lib/search-intent";
 import type { SearchResponse, SearchResult, SearchResultType } from "@/lib/types";
 
-const examples = ["469 Stevenson", "William Palmer", "Fentanyl", "Urban Alchemy"];
+const examples = ["469 Stevenson", "William Palmer", "Fentanyl", "Urban Alchemy", "Defund the Police"];
 const tabs: Array<{ value: SearchResultType; label: string }> = [
   { value: "all", label: "All" }, { value: "legislation", label: "Legislation" },
   { value: "votes", label: "Votes" }, { value: "comments", label: "Public comments" },
