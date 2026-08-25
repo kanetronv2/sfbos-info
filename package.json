@@ -15,6 +15,7 @@
     "db:embeddings": "node --env-file=.env.local scripts/embed-pages.mjs",
     "db:entities": "node --env-file=.env.local scripts/index-search-entities.mjs",
     "db:legacy-catalog": "node --env-file=.env.local scripts/backfill-legacy-catalog.mjs",
+    "db:legacy-text": "node --env-file=.env.local scripts/ingest-legacy-text.mjs",
     "test:infra": "node scripts/smoke.mjs",
     "test:model-flow": "node scripts/model-flow.mjs",
     "test:search": "node scripts/search-eval.mjs"

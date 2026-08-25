@@ -23,16 +23,20 @@ The PDF corpus is intentionally excluded from Git and Vercel deployments. Rebuil
 Files are organized under `data/full-board-meetings/{agendas,minutes}/{year}`.
 
 The City also maintains a legacy full-board catalog from before 2012. Much of that archive is
-official HTML rather than PDF. Backfill those source records without copying their contents into
-Postgres with:
+official HTML rather than PDF. Backfill its verified source records, then extract the official HTML
+and PDF text into the same page-level Postgres search index with:
 
 ```bash
 npm run db:legacy-catalog
+npm run db:legacy-text -- --concurrency=12
 ```
 
 The usable official listings reach 1996. The City catalog has missing or malformed listings for
 2003 through 2005 and does not publish every document type in some earlier years; the backfill
-records only verifiable links.
+records only verifiable links. The text ingester uses `pdftotext` with page-aware OCR fallback,
+records parser provenance and document versions, and is resumable. As of August 2026, 980 of the
+982 verified pre-2012 records are searchable. The two exceptions are truncated agenda PDFs served
+by the City's archive for April 13 and July 27, 1998.
 
 ## Production index
 
@@ -41,12 +45,13 @@ Provision a Neon Postgres integration in Vercel and copy `.env.example` to `.env
 ```bash
 npm run db:migrate
 npm run db:ingest
+npm run db:legacy-text
 npm run db:items
 npm run db:comments
 npm run db:sync-structured
 ```
 
-Both database commands load `.env.local` automatically.
+All database commands load `.env.local` automatically.
 
 Audit all local files and their official-source URL mapping without connecting to a database:
 

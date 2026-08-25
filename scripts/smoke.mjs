@@ -93,8 +93,20 @@ const cases = [
     path: "/api/quality",
     test: (body) =>
       body.metrics?.documents >= 2131 &&
-      body.metrics?.catalog_only_documents >= 982 &&
+      body.metrics?.indexed_documents >= 2129 &&
+      body.metrics?.catalog_only_documents <= 2 &&
       body.metrics?.documents_without_versions === 0,
+  },
+  {
+    name: "legacy 1996 full-text search",
+    path: "/api/search?q=Terence+Hallinan&year=1996&type=pages&mode=lexical&limit=5",
+    test: (body) =>
+      body.total >= 1 &&
+      body.results.some((result) =>
+        result.year === 1996 &&
+        result.transcriptUrl.includes("/documents/1150/1996-01-02-minutes#page-1") &&
+        result.snippet.includes("Hallinan")
+      ),
   },
 ];
 
@@ -127,6 +139,17 @@ const transcriptLinksPassed = transcriptResponse.ok &&
   transcriptHtml.includes('class="supervisor-name-link"');
 console.log(`${transcriptLinksPassed ? "PASS" : "FAIL"}  transcript supervisor profile links`);
 if (!transcriptLinksPassed) failures += 1;
+
+const legacyTranscriptResponse = await fetch(`${baseUrl}/documents/1150/1996-01-02-minutes`);
+const legacyTranscriptHtml = await legacyTranscriptResponse.text();
+const legacyTranscriptPassed = legacyTranscriptResponse.ok &&
+  legacyTranscriptHtml.includes('id="page-1"') &&
+  legacyTranscriptHtml.includes("Terence") &&
+  legacyTranscriptHtml.includes("Hallinan") &&
+  legacyTranscriptHtml.includes("VIEW OFFICIAL") &&
+  legacyTranscriptHtml.includes("HTML");
+console.log(`${legacyTranscriptPassed ? "PASS" : "FAIL"}  legacy HTML evidence transcript`);
+if (!legacyTranscriptPassed) failures += 1;
 
 const structuredRowStart = transcriptHtml.indexOf('id="file-210920"');
 const structuredRowEnd = transcriptHtml.indexOf("</details>", structuredRowStart);
@@ -198,5 +221,5 @@ if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 9} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 10} infrastructure smoke tests passed against ${baseUrl}.`);
 }

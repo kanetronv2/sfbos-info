@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: { absolute: "San Francisco Board of Supervisors Search" },
   description:
-    "Search San Francisco Board of Supervisors agendas, minutes, legislative files, recorded votes, and public comments, with an official document catalog from 1996 onward.",
+    "Search available San Francisco Board of Supervisors agendas and minutes from 1996 onward, plus legislative files, recorded votes, and public comments.",
   alternates: {
     canonical: "/",
     types: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "San Francisco Board of Supervisors Search",
     description:
-      "Search agendas, minutes, legislative files, recorded votes, and public comments, with an official document catalog from 1996 onward.",
+      "Search available agendas and minutes from 1996 onward, plus legislative files, recorded votes, and public comments.",
   },
 };
 

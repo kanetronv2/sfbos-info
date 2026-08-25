@@ -1,6 +1,6 @@
 # sfbos.info
 
-> Full-text search across San Francisco Board of Supervisors agendas and minutes from 2012 onward, plus available official-source catalog records reaching back to 1996. The legacy City catalog has known gaps from 2003 through 2005. Results link to official City PDFs or legacy HTML records.
+> Full-text search across available San Francisco Board of Supervisors agendas and minutes from 1996 onward. The legacy City catalog has known gaps from 2003 through 2005 and two truncated 1998 agenda PDFs. All other verified catalog records have searchable HTML transcripts. Results link to official City PDFs or legacy HTML records.
 
 This is a provider-neutral interface. The same Markdown and JSON endpoints are intended for any
 language model, agent, search engine, researcher, or application without preferential treatment.

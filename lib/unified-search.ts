@@ -59,6 +59,8 @@ export async function searchAllRecords(options: UnifiedSearchOptions): Promise<S
       ? searchDocuments({
           query: searchQuery,
           year: options.year,
+          fromYear,
+          toYear,
           kind: options.kind ?? (intent.voteIntent ? "minutes" : null),
           limit: candidateLimit,
           mode: "lexical",

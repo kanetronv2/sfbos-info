@@ -9,6 +9,8 @@ import type { DocumentKind, SearchResponse, SearchResult } from "./types";
 interface SearchOptions {
   query: string;
   year: number | null;
+  fromYear?: number | null;
+  toYear?: number | null;
   kind: DocumentKind | null;
   limit: number;
   mode?: "lexical" | "hybrid";
@@ -46,6 +48,15 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
   if (options.year) {
     params.push(options.year);
     filters.push(`d.year = $${params.length}`);
+  } else {
+    if (options.fromYear) {
+      params.push(options.fromYear);
+      filters.push(`d.year >= $${params.length}`);
+    }
+    if (options.toYear) {
+      params.push(options.toYear);
+      filters.push(`d.year <= $${params.length}`);
+    }
   }
 
   if (options.kind) {

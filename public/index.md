@@ -1,6 +1,6 @@
 # SF BOS Search
 
-sfbos.info is an independent full-text index of San Francisco Board of Supervisors agendas and minutes from 2012 onward, with available official-source catalog records reaching back to 1996. The legacy City catalog has known gaps from 2003 through 2005.
+sfbos.info is an independent full-text index of available San Francisco Board of Supervisors agendas and minutes from 1996 onward. The legacy City catalog has known gaps from 2003 through 2005 and two truncated 1998 agenda PDFs. All other verified catalog records have searchable HTML transcripts.
 
 ## Ask a question with the archive
 

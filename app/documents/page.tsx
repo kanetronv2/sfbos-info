@@ -8,13 +8,13 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "San Francisco Board of Supervisors Document Archive",
-  description: "Browse the San Francisco Board of Supervisors agenda and meeting-minutes catalog from 1996 onward, with official City sources and searchable transcripts where available.",
+  description: "Browse and search available San Francisco Board of Supervisors agendas and meeting minutes from 1996 onward, with HTML transcripts and official City sources.",
   alternates: { canonical: "/documents" },
   openGraph: {
     type: "website",
     url: "/documents",
     title: "San Francisco Board of Supervisors Document Archive",
-    description: "Agendas, meeting minutes, official City source documents, and searchable transcripts from 1996 onward.",
+    description: "Searchable agendas and meeting minutes, HTML transcripts, and official City source documents from 1996 onward.",
   },
 };
 
@@ -57,10 +57,10 @@ export default async function DocumentsPage() {
         <h1>Document archive.</h1>
         <p className="archive-lede">
           The official agenda and minutes catalog, ordered newest first. Records from 2010 onward
-          are generally PDFs; much of the older City archive was published as HTML. Searchable text
-          views are provided where extraction is complete. The legacy City catalog has missing or
-          malformed listings for 2003 through 2005 and does not publish every document type in some
-          earlier years.
+          are generally PDFs; much of the older City archive was published as HTML. All retrievable
+          records have searchable text views. The legacy City catalog has missing or malformed
+          listings for 2003 through 2005, does not publish every document type in some earlier
+          years, and serves two truncated agenda PDFs from 1998.
         </p>
 
         <div className="archive-stats" aria-label="Archive statistics">
