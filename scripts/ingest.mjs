@@ -209,10 +209,25 @@ async function collectDocuments(events) {
       for (const file of files) {
         const absolutePath = join(directory, file);
         const localPath = relative(projectRoot, absolutePath);
+        const embeddedLegistarMatch = file.match(/^(\d{4}-\d{2}-\d{2})_(\d+)_([0-9a-f-]{36})_(agenda|minutes)\.pdf$/i);
         const historicalMatch = file.match(/^(\d{4}-\d{2}-\d{2})_(\d+)_(agenda|minutes)\.pdf$/);
         const archiveMatch = file.match(/^bag(\d{2})(\d{2})(\d{2})_(agenda|minutes)\.pdf$/i);
 
-        if (historicalMatch) {
+        if (embeddedLegistarMatch) {
+          const [, meetingDate, eventId, eventGuid] = embeddedLegistarMatch;
+          const endpointType = kind === "agenda" ? "A" : "M";
+          documents.push({
+            absolutePath,
+            localPath,
+            year,
+            kind,
+            meetingDate,
+            title: documentTitle(kind, meetingDate),
+            officialUrl: `${legistarOrigin}/View.ashx?M=${endpointType}&ID=${eventId}&GUID=${eventGuid.toUpperCase()}`,
+            eventId: Number(eventId),
+            eventGuid: eventGuid.toUpperCase(),
+          });
+        } else if (historicalMatch) {
           const [, meetingDate, eventId] = historicalMatch;
           const event = events.get(eventId);
           if (!event) {

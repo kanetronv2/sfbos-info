@@ -108,6 +108,16 @@ const cases = [
         result.snippet.includes("Hallinan")
       ),
   },
+  {
+    name: "April 21, 2026 finalized minutes",
+    path: "/api/search?q=Bob+Ross+House&year=2026&type=all&mode=lexical&limit=10",
+    test: (body) =>
+      body.results.some((result) =>
+        result.fileNumber === "260151" &&
+        result.transcriptUrl.includes("/2026-04-21-minutes#file-260151") &&
+        result.officialUrl.includes("ID=1407453")
+      ),
+  },
 ];
 
 let failures = 0;
