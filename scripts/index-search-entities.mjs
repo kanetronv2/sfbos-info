@@ -17,26 +17,40 @@ const items = await sql.query(
   [parserVersion, limit],
 );
 
-for (const [index, item] of items.entries()) {
-  const entities = extractEntities(item);
-  for (const entity of entities) {
-    await sql.query(
-      `INSERT INTO search_entities (
-         legislative_item_id, entity_type, normalized_value, display_value,
-         numeric_value, confidence, parser_version
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (legislative_item_id, entity_type, normalized_value) DO UPDATE SET
-         display_value = excluded.display_value,
-         numeric_value = excluded.numeric_value,
-         confidence = excluded.confidence,
-         parser_version = excluded.parser_version,
-         updated_at = now()`,
-      [item.id, entity.type, normalize(entity.display), entity.display, entity.numeric ?? null, entity.confidence, parserVersion],
-    );
-  }
-  if ((index + 1) % 250 === 0) console.log(`Indexed entities for ${index + 1}/${items.length} items.`);
+const records = items.flatMap((item) => extractEntities(item).map((entity) => ({
+  legislative_item_id: item.id,
+  entity_type: entity.type,
+  normalized_value: normalize(entity.display),
+  display_value: entity.display,
+  numeric_value: entity.numeric ?? null,
+  confidence: entity.confidence,
+  parser_version: parserVersion,
+})));
+
+for (let offset = 0; offset < records.length; offset += 1000) {
+  const batch = records.slice(offset, offset + 1000);
+  await sql.query(
+    `INSERT INTO search_entities (
+       legislative_item_id, entity_type, normalized_value, display_value,
+       numeric_value, confidence, parser_version
+     )
+     SELECT legislative_item_id::bigint, entity_type, normalized_value, display_value,
+            numeric_value, confidence, parser_version
+     FROM jsonb_to_recordset($1::jsonb) AS record(
+       legislative_item_id text, entity_type text, normalized_value text, display_value text,
+       numeric_value numeric, confidence numeric, parser_version text
+     )
+     ON CONFLICT (legislative_item_id, entity_type, normalized_value) DO UPDATE SET
+       display_value = excluded.display_value,
+       numeric_value = excluded.numeric_value,
+       confidence = excluded.confidence,
+       parser_version = excluded.parser_version,
+       updated_at = now()`,
+    [JSON.stringify(batch)],
+  );
+  console.log(`Indexed ${Math.min(offset + batch.length, records.length)}/${records.length} entity records.`);
 }
-console.log(`Indexed ${items.length} legislative items with ${parserVersion}.`);
+console.log(`Indexed ${items.length} legislative items and ${records.length} entities with ${parserVersion}.`);
 
 function extractEntities(item) {
   const text = `${item.title}\n${item.content}`;
