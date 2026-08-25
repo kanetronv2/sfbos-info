@@ -158,7 +158,17 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
               {document.items.map((item) => (
                 <details key={item.id} id={`file-${item.fileNumber}`} className="structured-item">
                   <summary>
-                    <span>FILE {item.fileNumber}</span>
+                    <div className="structured-item-meta">
+                      <span>FILE {item.fileNumber}</span>
+                      <a
+                        href={officialSourcePage(document.officialUrl, item.startPage)}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Open ${pageRange(item.startPage, item.endPage)} in the official PDF`}
+                      >
+                        SOURCE {pageRange(item.startPage, item.endPage)} ↗
+                      </a>
+                    </div>
                     <strong>
                       <a
                         className="structured-source-link"
@@ -169,14 +179,6 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                         {item.title} <span aria-hidden="true">↗</span>
                       </a>
                     </strong>
-                    <a
-                      href={officialSourcePage(document.officialUrl, item.startPage)}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Open ${pageRange(item.startPage, item.endPage)} in the official PDF`}
-                    >
-                      SOURCE {pageRange(item.startPage, item.endPage)} ↗
-                    </a>
                   </summary>
                   <p className="structured-provenance">
                     Extraction confidence: {item.extractionConfidence === null ? "not scored" : `${Math.round(item.extractionConfidence * 100)}%`}
