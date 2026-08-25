@@ -177,6 +177,35 @@ CREATE TABLE IF NOT EXISTS ingestion_runs (
   error text
 );
 
+CREATE TABLE IF NOT EXISTS ingestion_jobs (
+  id bigserial PRIMARY KEY,
+  source_key text NOT NULL UNIQUE,
+  source text NOT NULL CHECK (source IN ('legistar-calendar', 'board-archive')),
+  meeting_date date NOT NULL,
+  kind text NOT NULL CHECK (kind IN ('agenda', 'minutes')),
+  official_url text NOT NULL,
+  event_id bigint,
+  event_guid uuid,
+  source_content_length bigint,
+  source_etag text,
+  source_last_modified timestamptz,
+  status text NOT NULL CHECK (status IN ('pending', 'dispatched', 'running', 'complete', 'failed')),
+  attempts integer NOT NULL DEFAULT 0,
+  document_id bigint REFERENCES documents(id) ON DELETE SET NULL,
+  discovered_at timestamptz NOT NULL DEFAULT now(),
+  dispatched_at timestamptz,
+  started_at timestamptz,
+  finished_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  error text
+);
+
+CREATE INDEX IF NOT EXISTS ingestion_jobs_status_idx
+  ON ingestion_jobs (status, meeting_date);
+
+COMMENT ON TABLE ingestion_jobs IS
+  'Durable queue of official agendas and minutes discovered by Vercel and extracted by the ingestion worker.';
+
 CREATE TABLE IF NOT EXISTS parser_runs (
   id bigserial PRIMARY KEY,
   parser_name text NOT NULL,

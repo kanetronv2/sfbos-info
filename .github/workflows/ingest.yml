@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "23 13 * * *"
   workflow_dispatch:
+    inputs:
+      job_ids:
+        description: Comma-separated ingestion job IDs dispatched by sfbos.info
+        required: false
+        type: string
 
 concurrency:
   group: sfbos-ingestion
@@ -17,6 +22,7 @@ jobs:
       contents: read
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      INGESTION_JOB_IDS: ${{ inputs.job_ids || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +32,12 @@ jobs:
       - name: Install PDF text extractor
         run: sudo apt-get update && sudo apt-get install --yes poppler-utils
       - run: npm ci
+      - name: Migrate queue schema
+        run: node scripts/migrate.mjs
       - name: Download current official agendas and minutes
         run: ./scripts/download-full-board-meetings.sh
+      - name: Download newly discovered Legistar records
+        run: node scripts/process-ingestion-jobs.mjs
       - name: Migrate and ingest
         shell: bash
         run: |
@@ -37,3 +47,7 @@ jobs:
           node scripts/ingest-items.mjs --from-year "${current_year}" --to-year "${current_year}"
           node scripts/ingest-comments.mjs --from-year "${current_year}" --to-year "${current_year}"
           node scripts/sync-structured-records.mjs --from-year "${current_year}" --to-year "${current_year}" --skip-versions --legistar-limit 25
+          node scripts/finish-ingestion-jobs.mjs
+      - name: Record workflow failure
+        if: ${{ failure() }}
+        run: node scripts/finish-ingestion-jobs.mjs --failed
