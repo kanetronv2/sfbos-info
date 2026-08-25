@@ -6,13 +6,16 @@ const limitArg = process.argv.find((value) => value.startsWith("--limit="));
 const limit = limitArg ? Number(limitArg.split("=")[1]) : 5000;
 const parserVersion = "search-entities-1.0.0";
 
+await sql.query(
+  `DELETE FROM search_entities
+   WHERE entity_type = 'file-number' AND parser_version = $1`,
+  [parserVersion],
+);
+
 const items = await sql.query(
   `SELECT i.id::text, i.file_number, i.title, i.content
    FROM legislative_items i
-   WHERE NOT EXISTS (
-     SELECT 1 FROM search_entities se
-     WHERE se.legislative_item_id = i.id AND se.parser_version = $1
-   )
+   WHERE i.search_entities_parser_version IS DISTINCT FROM $1
    ORDER BY i.id LIMIT $2`,
   [parserVersion, limit],
 );
@@ -52,9 +55,18 @@ for (let offset = 0; offset < records.length; offset += 1000) {
 }
 console.log(`Indexed ${items.length} legislative items and ${records.length} entities with ${parserVersion}.`);
 
+for (let offset = 0; offset < items.length; offset += 5000) {
+  await sql.query(
+    `UPDATE legislative_items
+     SET search_entities_indexed_at = now(), search_entities_parser_version = $1
+     WHERE id = ANY($2::bigint[])`,
+    [parserVersion, items.slice(offset, offset + 5000).map((item) => item.id)],
+  );
+}
+
 function extractEntities(item) {
   const text = `${item.title}\n${item.content}`;
-  const entities = [{ type: "file-number", display: item.file_number, confidence: 1 }];
+  const entities = [];
   const addresses = text.match(/\b\d{1,5}(?:-\d{1,5})?\s+(?:(?:North|South|East|West|N\.?|S\.?|E\.?|W\.?)\s+)?(?:[\p{L}\p{N}'&.-]+\s+){0,6}(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|Way|Lane|Ln\.?|Court|Ct\.?|Place|Pl\.?|Highway|Hwy\.?)\b/giu) ?? [];
   for (const address of addresses) entities.push({ type: "address", display: address.replace(/[.,;:]+$/, ""), confidence: 0.9 });
   for (const match of text.matchAll(/\b([\d,]+)\s+(?:new\s+|net\s+|affordable\s+|residential\s+|dwelling\s+|housing\s+)*(?:housing\s+|residential\s+|dwelling\s+)?units?\b/gi)) {

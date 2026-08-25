@@ -81,8 +81,10 @@ ALTER TABLE legislative_items ADD COLUMN IF NOT EXISTS direct_search_vector tsve
 CREATE INDEX IF NOT EXISTS legislative_items_direct_search_vector_idx
   ON legislative_items USING gin (direct_search_vector);
 
-CREATE INDEX IF NOT EXISTS legislative_items_title_trgm_idx
-  ON legislative_items USING gin (lower(title) gin_trgm_ops);
+DROP INDEX IF EXISTS legislative_items_title_trgm_idx;
+
+ALTER TABLE legislative_items ADD COLUMN IF NOT EXISTS search_entities_indexed_at timestamptz;
+ALTER TABLE legislative_items ADD COLUMN IF NOT EXISTS search_entities_parser_version text;
 
 CREATE TABLE IF NOT EXISTS roll_calls (
   id bigserial PRIMARY KEY,
@@ -376,8 +378,7 @@ CREATE TABLE IF NOT EXISTS search_entities (
 CREATE INDEX IF NOT EXISTS search_entities_vector_idx
   ON search_entities USING gin (search_vector);
 
-CREATE INDEX IF NOT EXISTS search_entities_value_trgm_idx
-  ON search_entities USING gin (normalized_value gin_trgm_ops);
+DROP INDEX IF EXISTS search_entities_value_trgm_idx;
 
 CREATE INDEX IF NOT EXISTS search_entities_item_idx
   ON search_entities (legislative_item_id);
