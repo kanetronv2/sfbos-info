@@ -135,6 +135,19 @@ const sourcePagePassed = structuredRowStart >= 0 &&
 console.log(`${sourcePagePassed ? "PASS" : "FAIL"}  structured row official source page`);
 if (!sourcePagePassed) failures += 1;
 
+const unanimousResponse = await fetch(`${baseUrl}/documents/824/2022-02-08-minutes`);
+const unanimousHtml = await unanimousResponse.text();
+const unanimousStart = unanimousHtml.indexOf('id="file-211306"');
+const unanimousEnd = unanimousHtml.indexOf("</details>", unanimousStart);
+const unanimousRecordHtml = unanimousHtml.slice(unanimousStart, unanimousEnd);
+const unanimousEmptySidePassed = unanimousResponse.ok &&
+  unanimousStart >= 0 &&
+  /Ayes(?:<!-- -->)?:/.test(unanimousRecordHtml) &&
+  /Noes(?:<!-- -->)?:/.test(unanimousRecordHtml) &&
+  unanimousRecordHtml.includes("None");
+console.log(`${unanimousEmptySidePassed ? "PASS" : "FAIL"}  unanimous vote explicit empty side`);
+if (!unanimousEmptySidePassed) failures += 1;
+
 const supervisorResponse = await fetch(`${baseUrl}/supervisors/connie-chan`);
 const supervisorHtml = await supervisorResponse.text();
 const contactPassed = supervisorResponse.ok &&
@@ -182,5 +195,5 @@ if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 8} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 9} infrastructure smoke tests passed against ${baseUrl}.`);
 }

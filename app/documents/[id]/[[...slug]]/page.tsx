@@ -193,8 +193,8 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                             {rollCall.isFinal && <strong>LIKELY FINAL</strong>}
                           </div>
                           <p>{rollCall.action || "Action text unavailable."}</p>
-                          <VoteLine label="Ayes" names={rollCall.ayes} supervisors={supervisorLinks} />
-                          <VoteLine label="Noes" names={rollCall.noes} supervisors={supervisorLinks} />
+                          <VoteLine label="Ayes" names={rollCall.ayes} supervisors={supervisorLinks} showWhenEmpty />
+                          <VoteLine label="Noes" names={rollCall.noes} supervisors={supervisorLinks} showWhenEmpty />
                           <VoteLine label="Absent" names={rollCall.absent} supervisors={supervisorLinks} />
                           <VoteLine label="Excused" names={rollCall.excused} supervisors={supervisorLinks} />
                         </article>
@@ -255,16 +255,20 @@ function VoteLine({
   label,
   names,
   supervisors,
+  showWhenEmpty = false,
 }: {
   label: string;
   names: string[];
   supervisors: Awaited<ReturnType<typeof listSupervisorNameLinks>>;
+  showWhenEmpty?: boolean;
 }) {
-  if (!names.length) return null;
+  if (!names.length && !showWhenEmpty) return null;
   return (
     <p className="vote-line">
       <strong>{label}:</strong>{" "}
-      <SupervisorLinkedText text={names.join(", ")} supervisors={supervisors} />
+      {names.length > 0
+        ? <SupervisorLinkedText text={names.join(", ")} supervisors={supervisors} />
+        : "None"}
     </p>
   );
 }
