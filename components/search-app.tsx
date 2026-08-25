@@ -5,10 +5,10 @@ import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
 import type { DocumentKind, SearchResponse } from "@/lib/types";
 
 const examples = [
-  "affordable housing",
-  "police overtime",
-  "zoning appeal",
-  "public comment",
+  "469 Stevenson",
+  "William Palmer",
+  "Fentanyl",
+  "Urban Alchemy",
 ];
 
 export function SearchApp() {
