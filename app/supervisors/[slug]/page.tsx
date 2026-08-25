@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSiteUrl } from "@/lib/site-url";
+import { getDistrictNeighborhoods } from "@/lib/supervisor-districts";
 import { getSupervisor } from "@/lib/supervisors";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -21,6 +22,7 @@ export default async function SupervisorPage({ params }: Props) {
   const profile = await getSupervisor((await params).slug);
   if (!profile) notFound();
   const siteUrl = getSiteUrl();
+  const neighborhoods = getDistrictNeighborhoods(profile.district);
   const person = {
     "@type": "Person",
     name: profile.displayName,
@@ -67,7 +69,11 @@ export default async function SupervisorPage({ params }: Props) {
           </div>
           {profile.contact ? (
             <dl>
-              <dt>District</dt><dd>{profile.district}</dd>
+              <dt>District</dt>
+              <dd>
+                {profile.district}
+                {neighborhoods.length > 0 ? ` (${neighborhoods.join(", ")})` : ""}
+              </dd>
               <dt>Email</dt><dd><a href={`mailto:${profile.contact.email}`}>{profile.contact.email}</a></dd>
               <dt>Phone</dt><dd><a href={`tel:${profile.contact.phone.replace(/[^+\d]/g, "")}`}>{profile.contact.phone}</a></dd>
               <dt>Office</dt><dd>{profile.contact.address}<br />San Francisco, CA 94102</dd>
