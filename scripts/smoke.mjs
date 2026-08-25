@@ -170,9 +170,17 @@ const modelCalloutRemoved = homeResponse.ok &&
 console.log(`${modelCalloutRemoved ? "PASS" : "FAIL"}  homepage model callout removed`);
 if (!modelCalloutRemoved) failures += 1;
 
+const iconResponse = await fetch(`${baseUrl}/icon.svg`);
+const iconSvg = await iconResponse.text();
+const citySealIconPassed = iconResponse.ok &&
+  iconSvg.includes("Seal of the City and County of San Francisco") &&
+  iconSvg.includes("data:image/png;base64,");
+console.log(`${citySealIconPassed ? "PASS" : "FAIL"}  San Francisco seal favicon asset`);
+if (!citySealIconPassed) failures += 1;
+
 if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 7} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 8} infrastructure smoke tests passed against ${baseUrl}.`);
 }

@@ -53,7 +53,15 @@ button, input, select { font: inherit; }
   letter-spacing: -.02em;
 }
 
-.prompt-mark { color: var(--accent); font-weight: 800; }
+.prompt-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  overflow: hidden;
+  background: url("/icon.svg") center / contain no-repeat;
+  color: transparent;
+  font-size: 0;
+}
 
 .topbar nav { display: flex; height: 100%; }
 .topbar nav a {
