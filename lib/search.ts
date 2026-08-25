@@ -4,6 +4,7 @@ import { documentFileUrl, documentMarkdownExcerptUrl, documentUrl } from "./docu
 import { displayDocumentTitle } from "./document-title";
 import { expandQuery } from "./query-expansion";
 import { rerankWithEmbeddings } from "./embeddings";
+import { cleanSearchHeadline, SEARCH_HEADLINE_MARKERS } from "./search-headline";
 import type { DocumentKind, SearchResponse, SearchResult } from "./types";
 
 interface SearchOptions {
@@ -84,7 +85,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
           'english',
           p.content,
             (${queryExpression}),
-          'StartSel=, StopSel=, MaxWords=55, MinWords=22, ShortWord=2, HighlightAll=false'
+          '${SEARCH_HEADLINE_MARKERS}, MaxWords=55, MinWords=22, ShortWord=2, HighlightAll=false'
         ) AS snippet,
         ts_rank_cd(p.search_vector, (${queryExpression}), 32)::float AS score,
         count(*) OVER()::int AS total_count
@@ -121,7 +122,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     officialUrl: row.official_url,
     page: row.page_number,
     fileNumber: row.file_number ?? undefined,
-    snippet: normalizeWhitespace(row.snippet),
+    snippet: cleanSearchHeadline(row.snippet),
     score: Number(row.score),
   }));
 
@@ -178,8 +179,4 @@ function searchPreview(options: SearchOptions): SearchResponse {
     },
     results,
   };
-}
-
-function normalizeWhitespace(value: string) {
-  return value.replace(/\s+/g, " ").trim();
 }

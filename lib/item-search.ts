@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { extractItemFacts } from "./item-extraction";
 import { documentFileUrl, documentMarkdownExcerptUrl } from "./document-url";
 import { expandQuery } from "./query-expansion";
+import { cleanSearchHeadline, SEARCH_HEADLINE_MARKERS } from "./search-headline";
 import type {
   ActionType,
   GroupBy,
@@ -149,7 +150,7 @@ export async function searchLegislativeItems(
             'english',
             i.content,
             (${queryExpression}),
-            'StartSel=, StopSel=, MaxWords=80, MinWords=30, ShortWord=2, MaxFragments=2, FragmentDelimiter= … '
+            '${SEARCH_HEADLINE_MARKERS}, MaxWords=80, MinWords=30, ShortWord=2, MaxFragments=2, FragmentDelimiter= … '
           ) AS snippet,
           (
             ts_rank_cd(i.direct_search_vector, (${queryExpression}), 32) * 1.8
@@ -268,7 +269,7 @@ export async function searchLegislativeItems(
     officialUrl: row.official_url,
     startPage: row.start_page,
     endPage: row.end_page,
-    snippet: normalizeWhitespace(row.snippet),
+    snippet: cleanSearchHeadline(row.snippet),
     score: Number(row.score),
     groupCount: row.group_count,
     extractionConfidence: row.extraction_confidence === null ? null : Number(row.extraction_confidence),
@@ -296,10 +297,6 @@ function publicFilters(options: ItemSearchOptions) {
     fromYear: options.fromYear,
     toYear: options.toYear,
   };
-}
-
-function normalizeWhitespace(value: string) {
-  return value.replace(/\s+/g, " ").trim();
 }
 
 async function correctSpelling(query: string) {
