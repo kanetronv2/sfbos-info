@@ -23,14 +23,13 @@ export async function discoverOfficialDocuments(now = new Date()) {
     discoverBoardArchive(),
   ]);
 
-  const candidates = new Map<string, Omit<OfficialDocumentCandidate, "contentLength" | "etag" | "lastModified">>();
-  for (const candidate of [...archive, ...calendar]) {
+  const currentCalendar = calendar.filter((candidate) => candidate.meetingDate >= earliestDate);
+  const calendarMeetingKeys = new Set(currentCalendar.map((candidate) => `${candidate.meetingDate}:${candidate.kind}`));
+  const candidates = new Map(currentCalendar.map((candidate) => [candidate.sourceKey, candidate]));
+  for (const candidate of archive) {
     if (candidate.meetingDate < earliestDate) continue;
-    const meetingDocumentKey = `${candidate.meetingDate}:${candidate.kind}`;
-    const existing = candidates.get(meetingDocumentKey);
-    if (!existing || candidate.source === "legistar-calendar") {
-      candidates.set(meetingDocumentKey, candidate);
-    }
+    if (calendarMeetingKeys.has(`${candidate.meetingDate}:${candidate.kind}`)) continue;
+    candidates.set(candidate.sourceKey, candidate);
   }
 
   return concurrentMap([...candidates.values()], 8, async (candidate) => ({

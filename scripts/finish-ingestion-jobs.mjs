@@ -19,7 +19,7 @@ if (status === "failed") {
          WHERE d.page_count > 0 AND (
            d.official_url = j.official_url
            OR (j.event_id IS NOT NULL AND d.event_id = j.event_id AND d.kind = j.kind)
-           OR (d.meeting_date = j.meeting_date AND d.kind = j.kind)
+           OR (j.event_id IS NULL AND d.meeting_date = j.meeting_date AND d.kind = j.kind)
          )
          ORDER BY (d.official_url = j.official_url) DESC, d.indexed_at DESC
          LIMIT 1

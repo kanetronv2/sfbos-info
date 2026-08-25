@@ -29,7 +29,7 @@ export async function GET(request: Request) {
            WHERE d.page_count > 0 AND (
              d.official_url = c.official_url
              OR (c.event_id IS NOT NULL AND d.event_id = c.event_id AND d.kind = c.kind)
-             OR (d.meeting_date = c.meeting_date AND d.kind = c.kind)
+             OR (c.event_id IS NULL AND d.meeting_date = c.meeting_date AND d.kind = c.kind)
            )
          ) AS indexed
        FROM candidates c
