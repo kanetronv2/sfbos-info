@@ -11,7 +11,7 @@ const matterLimit = numberArg("legistar-limit", 250);
 const skipVersions = args.has("skip-versions");
 const skipLegistar = args.has("skip-legistar");
 const parserName = "sfbos-structured-records";
-const parserVersion = "2.0.0";
+const parserVersion = "2.1.0";
 const configHash = sha256(JSON.stringify({ fromYear, toYear, parserVersion }));
 const supervisorRosterUrl = "https://sfbos.org/current-supervisors";
 const officeAddress = "1 Dr. Carlton B. Goodlett Place, City Hall";
@@ -416,6 +416,33 @@ async function reconcilePositions() {
      FROM supervisor_aliases a
      WHERE rcp.supervisor_id IS NULL
        AND a.normalized_alias = lower(regexp_replace(trim(rcp.recorded_name), '[^a-zA-Z0-9]+', '', 'g'))`,
+    [],
+  );
+  await sql.query(
+    `UPDATE roll_call_positions rcp SET
+       supervisor_id = matched.supervisor_id,
+       confidence = 0.98,
+       source = 'official-minutes-parser+service-dates'
+     FROM (
+       SELECT rcp_inner.id, candidate.id AS supervisor_id
+       FROM roll_call_positions rcp_inner
+       JOIN roll_calls rc ON rc.id = rcp_inner.roll_call_id
+       JOIN legislative_items i ON i.id = rc.item_id
+       JOIN documents d ON d.id = i.document_id
+       CROSS JOIN LATERAL (
+         SELECT s.id
+         FROM supervisors s
+         WHERE lower(regexp_replace(trim(rcp_inner.recorded_name), '[^a-zA-Z0-9]+', '', 'g')) =
+               lower(regexp_replace(trim(s.family_name), '[^a-zA-Z0-9]+', '', 'g'))
+           AND s.term_start IS NOT NULL
+           AND s.term_end IS NOT NULL
+           AND d.meeting_date BETWEEN s.term_start AND s.term_end
+         ORDER BY s.term_start DESC
+         LIMIT 1
+       ) candidate
+     ) matched
+     WHERE rcp.id = matched.id
+       AND rcp.supervisor_id IS DISTINCT FROM matched.supervisor_id`,
     [],
   );
 }

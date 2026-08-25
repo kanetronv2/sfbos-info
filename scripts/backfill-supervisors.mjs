@@ -26,6 +26,9 @@ const canonicalNames = new Map([
   ["Christine Olague", "Christina Olague"],
   ["J eff Sheehy", "Jeff Sheehy"],
 ]);
+const canonicalSlugs = new Map([
+  ["Sandra Lee Fewer", "sandra-fewer"],
+]);
 
 const response = await fetch(sourceUrl, {
   headers: { "User-Agent": "sfbos.info supervisor reconciliation/1.0" },
@@ -35,6 +38,8 @@ if (!response.ok) throw new Error(`Official former-supervisors directory returne
 const records = parseFormerSupervisors(await response.text());
 let inserted = 0;
 let updated = 0;
+
+await mergeDuplicateSupervisor("sandra-lee-fewer", "sandra-fewer");
 
 for (const record of records) {
   const [existing] = await sql.query("SELECT id::text FROM supervisors WHERE slug = $1", [record.slug]);
@@ -98,7 +103,7 @@ function parseFormerSupervisors(html) {
     const name = canonicalNames.get(parsedName) ?? parsedName;
     const dates = [...table.matchAll(/\b(\d{2}\/\d{2}\/\d{4})\b/g)].map((date) => isoDate(date[1])).sort();
     if (!name || !dates.length || dates.at(-1) < firstCatalogDate) continue;
-    const slug = slugify(name);
+    const slug = canonicalSlugs.get(name) ?? slugify(name);
     const profilePath = nameBlock.match(/href="([^"]+)"/i)?.[1] ?? sourceUrl;
     const servedAfterAtLargeEra = dates.at(-1) > "2001-01-08";
     records.push({
@@ -136,4 +141,34 @@ function slugify(value) {
 
 function normalizeName(value) {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+async function mergeDuplicateSupervisor(sourceSlug, targetSlug) {
+  const [source] = await sql.query("SELECT id::text, term_start, term_end, district, metadata FROM supervisors WHERE slug = $1", [sourceSlug]);
+  const [target] = await sql.query("SELECT id::text FROM supervisors WHERE slug = $1", [targetSlug]);
+  if (!source || !target) return;
+
+  await sql.query("UPDATE roll_call_positions SET supervisor_id = $2 WHERE supervisor_id = $1", [source.id, target.id]);
+  await sql.query(
+    `DELETE FROM supervisor_aliases source_alias
+     WHERE source_alias.supervisor_id = $1
+       AND EXISTS (
+         SELECT 1 FROM supervisor_aliases target_alias
+         WHERE target_alias.supervisor_id = $2
+           AND target_alias.normalized_alias = source_alias.normalized_alias
+       )`,
+    [source.id, target.id],
+  );
+  await sql.query("UPDATE supervisor_aliases SET supervisor_id = $2 WHERE supervisor_id = $1", [source.id, target.id]);
+  await sql.query(
+    `UPDATE supervisors SET
+       term_start = coalesce(term_start, $2),
+       term_end = coalesce(term_end, $3),
+       district = coalesce(district, $4),
+       metadata = metadata || $5::jsonb,
+       updated_at = now()
+     WHERE id = $1`,
+    [target.id, source.term_start, source.term_end, source.district, JSON.stringify(source.metadata ?? {})],
+  );
+  await sql.query("DELETE FROM supervisors WHERE id = $1", [source.id]);
 }

@@ -138,20 +138,24 @@ function parseItems(pages) {
   }
 
   const headerPattern = /^[ \t]*(\d{6})\s+\[([\s\S]*?)\]/gm;
-  const headers = [...combined.matchAll(headerPattern)];
+  const modernHeaders = [...combined.matchAll(headerPattern)].map((header) => ({
+    index: header.index ?? 0,
+    fileNumber: header[1],
+    title: normalizeWhitespace(header[2]),
+  }));
+  const headers = modernHeaders.length ? modernHeaders : findLegacyHeaders(combined);
 
   const items = headers.map((header, index) => {
-    const start = header.index ?? 0;
+    const start = header.index;
     const rawEnd = headers[index + 1]?.index ?? combined.length;
     const content = trimAtSectionBoundary(combined.slice(start, rawEnd)).trim();
     const end = start + content.length;
-    const title = normalizeWhitespace(header[2]);
     return {
       ordinal: index + 1,
-      file_number: header[1],
-      title,
+      file_number: header.fileNumber,
+      title: header.title,
       content,
-      matter: matterKey(title),
+      matter: matterKey(header.title),
       context: "",
       start_page: pageAtOffset(pageOffsets, start),
       end_page: pageAtOffset(pageOffsets, Math.max(start, end - 1)),
@@ -169,6 +173,26 @@ function parseItems(pages) {
     item.context = (matterContexts.get(item.matter) ?? []).join("\n");
   }
   return items;
+}
+
+function findLegacyHeaders(content) {
+  const candidates = [...content.matchAll(/^[ \t]*\[([^\]]{3,300})\]\s*$/gm)];
+  const headers = [];
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    const start = candidate.index ?? 0;
+    const end = candidates[index + 1]?.index ?? content.length;
+    const block = content.slice(start, end);
+    const file = block.match(/\bFile(?:\s+No\.)?\s+([A-Za-z0-9][A-Za-z0-9.-]*)/i)?.[1]
+      ?.replace(/[,.]+$/, "");
+    if (!file) continue;
+    headers.push({
+      index: start,
+      fileNumber: file,
+      title: normalizeWhitespace(candidate[1]),
+    });
+  }
+  return headers;
 }
 
 function trimAtSectionBoundary(content) {
@@ -233,14 +257,16 @@ function parseRollCalls(content) {
 
       let namesText = label.names;
       let cursor = index + 1;
-      while (splitNames(namesText).length < label.count && cursor < lines.length) {
+      let parsed = parseVoteNames(namesText, label.count);
+      while (!parsed.complete && cursor < lines.length) {
         if (parseVoteLabel(lines[cursor])) break;
         if (/^\s*\d{6}\s+\[/.test(lines[cursor])) break;
         if (!isPageFurniture(lines[cursor])) namesText += `, ${lines[cursor].trim()}`;
         cursor += 1;
+        parsed = parseVoteNames(namesText, label.count);
       }
 
-      rollCall[label.key] = splitNames(namesText).slice(0, label.count);
+      rollCall[label.key] = parsed.names.slice(0, parsed.count);
       index = cursor;
     }
 
@@ -252,12 +278,35 @@ function parseRollCalls(content) {
 }
 
 function parseVoteLabel(line) {
-  const match = line.match(/^\s*(Ayes|Noes|Absent|Excused):\s*(\d+)\s*-\s*(.*)$/i);
+  const match = line.match(/^\s*(Ayes|Noes|Absent|Excused):\s*(.*)$/i);
   if (!match) return null;
+  const modern = match[2].match(/^(\d+)\s*[-–—]\s*(.*)$/);
+  const countOnly = match[2].match(/^(\d+)\s*$/);
   return {
     key: match[1].toLowerCase(),
-    count: Number(match[2]),
-    names: match[3],
+    count: modern ? Number(modern[1]) : countOnly ? Number(countOnly[1]) : null,
+    names: modern ? modern[2] : countOnly ? "" : match[2],
+  };
+}
+
+function parseVoteNames(value, expectedCount) {
+  const suffix = value.match(/\s*[-–—]\s*(\d+)\.?\s*$/);
+  let count = expectedCount ?? (suffix ? Number(suffix[1]) : null);
+  let cleaned = value
+    .replace(/^\s*Supervisors?\s+/i, "")
+    .replace(/\s*[-–—]\s*\d+\.?\s*$/, "")
+    .replace(/^[\s,–—-]+/, "")
+    .trim();
+  const wrappedPrefix = cleaned.match(/^(\d+)\s*[-–—]\s*(.*)$/);
+  if (wrappedPrefix) {
+    count ??= Number(wrappedPrefix[1]);
+    cleaned = wrappedPrefix[2].trim();
+  }
+  const names = /^(?:none|0)?\.?$/i.test(cleaned) ? [] : splitNames(cleaned);
+  return {
+    names,
+    count: count ?? names.length,
+    complete: count !== null && names.length >= count,
   };
 }
 
