@@ -84,11 +84,17 @@ export async function searchLegislativeItems(
     .map((_, index) => `websearch_to_tsquery('english', $${index + 1})`)
     .join(" || ");
 
-  params.push(options.fromYear, options.toYear);
+  params.push(options.fromYear, options.toYear, options.query.toLowerCase());
   const fromPosition = queryVariants.length + 1;
   const toPosition = queryVariants.length + 2;
+  const originalQueryPosition = queryVariants.length + 3;
+  const normalizedFileNumber = options.query.replace(/^.*?#?(\d{6}).*$/, "$1");
+  const hasFileNumber = /^\d{6}$/.test(normalizedFileNumber);
   const filters = [
-    `i.direct_search_vector @@ (${queryExpression})`,
+    `(
+      i.direct_search_vector @@ (${queryExpression})
+      ${hasFileNumber ? `OR i.file_number = '${normalizedFileNumber}'` : ""}
+    )`,
     `d.year BETWEEN $${fromPosition} AND $${toPosition}`,
   ];
 
@@ -145,7 +151,17 @@ export async function searchLegislativeItems(
             (${queryExpression}),
             'StartSel=, StopSel=, MaxWords=80, MinWords=30, ShortWord=2, MaxFragments=2, FragmentDelimiter= … '
           ) AS snippet,
-          ts_rank_cd(i.direct_search_vector, (${queryExpression}), 32)::float AS score,
+          (
+            ts_rank_cd(i.direct_search_vector, (${queryExpression}), 32) * 1.8
+            + ts_rank_cd(to_tsvector('english', coalesce(i.title, '')), (${queryExpression}), 32) * 3.2
+            + CASE WHEN lower(i.title) LIKE '%' || $${originalQueryPosition} || '%' THEN 2.5 ELSE 0 END
+            + CASE WHEN i.file_number = regexp_replace($${originalQueryPosition}, '\\D', '', 'g') THEN 8 ELSE 0 END
+            + greatest(
+                similarity(lower(i.title), $${originalQueryPosition}),
+                word_similarity($${originalQueryPosition}, lower(i.title))
+              ) * 0.7
+            + CASE WHEN EXISTS (SELECT 1 FROM roll_calls final_rc WHERE final_rc.item_id = i.id AND final_rc.is_final) THEN 0.12 ELSE 0 END
+          )::float AS score,
           row_number() OVER (
             PARTITION BY ${groupExpression}
             ORDER BY d.meeting_date DESC, i.ordinal DESC
@@ -222,6 +238,18 @@ export async function searchLegislativeItems(
     params,
   )) as DatabaseRow[];
 
+  if (!rows.length && /^[\p{L}\p{N}' -]+$/u.test(options.query) && options.query.split(/\s+/).length <= 6) {
+    const correctedQuery = await correctSpelling(options.query);
+    if (correctedQuery && correctedQuery.toLowerCase() !== options.query.toLowerCase()) {
+      const corrected = await searchLegislativeItems({ ...options, query: correctedQuery });
+      return {
+        ...corrected,
+        query: options.query,
+        interpretedQueries: [correctedQuery, ...corrected.interpretedQueries].filter((value, index, values) => values.indexOf(value) === index),
+      };
+    }
+  }
+
   const results: LegislativeItemResult[] = rows.map((row) => ({
     id: row.item_id,
     meetingDate: row.meeting_date,
@@ -272,4 +300,53 @@ function publicFilters(options: ItemSearchOptions) {
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+async function correctSpelling(query: string) {
+  if (!process.env.DATABASE_URL) return null;
+  const sql = neon(process.env.DATABASE_URL);
+  const tokens = query.split(/\s+/).filter(Boolean);
+  const candidates = await sql.query(
+    `SELECT DISTINCT lower(word) AS word
+     FROM legislative_items i,
+       LATERAL regexp_split_to_table(i.title, '[^[:alnum:]'']+') AS word
+     WHERE length(word) BETWEEN 4 AND 24
+       AND lower(left(word, 1)) = ANY($1::text[])
+     LIMIT 12000`,
+    [[...new Set(tokens.filter((token) => token.length >= 4).map((token) => token[0].toLowerCase()))]],
+  );
+  const words = candidates.map((row: Record<string, unknown>) => row.word as string);
+  let changed = false;
+  const corrected = tokens.map((token) => {
+    if (token.length < 4 || words.includes(token.toLowerCase())) return token;
+    const matches = words
+      .filter((word) => Math.abs(word.length - token.length) <= 1)
+      .map((word) => ({ word, distance: damerauLevenshtein(token.toLowerCase(), word) }))
+      .filter((match) => match.distance <= 1)
+      .sort((a, b) => a.distance - b.distance || a.word.localeCompare(b.word));
+    if (!matches[0]) return token;
+    changed = true;
+    return matches[0].word;
+  });
+  return changed ? corrected.join(" ") : null;
+}
+
+function damerauLevenshtein(left: string, right: string) {
+  const matrix = Array.from({ length: left.length + 1 }, () => Array<number>(right.length + 1).fill(0));
+  for (let row = 0; row <= left.length; row += 1) matrix[row][0] = row;
+  for (let column = 0; column <= right.length; column += 1) matrix[0][column] = column;
+  for (let row = 1; row <= left.length; row += 1) {
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+      matrix[row][column] = Math.min(
+        matrix[row - 1][column] + 1,
+        matrix[row][column - 1] + 1,
+        matrix[row - 1][column - 1] + cost,
+      );
+      if (row > 1 && column > 1 && left[row - 1] === right[column - 2] && left[row - 2] === right[column - 1]) {
+        matrix[row][column] = Math.min(matrix[row][column], matrix[row - 2][column - 2] + 1);
+      }
+    }
+  }
+  return matrix[left.length][right.length];
 }

@@ -23,6 +23,7 @@ interface DatabaseRow {
   official_url: string;
   page_number: number;
   file_number: string | null;
+  item_title: string | null;
   snippet: string;
   score: number;
   total_count: number;
@@ -67,6 +68,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
         d.official_url,
         p.page_number,
         matched_item.file_number,
+        matched_item.title AS item_title,
         ts_headline(
           'english',
           p.content,
@@ -78,7 +80,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
       FROM pages p
       JOIN documents d ON d.id = p.document_id
       LEFT JOIN LATERAL (
-        SELECT i.file_number
+        SELECT i.file_number, i.title
         FROM legislative_items i
         WHERE i.document_id = p.document_id
           AND p.page_number BETWEEN i.start_page AND i.end_page
@@ -100,7 +102,7 @@ export async function searchDocuments(options: SearchOptions): Promise<SearchRes
     meetingDate: row.meeting_date,
     year: row.year,
     kind: row.kind,
-    title: displayDocumentTitle(row.title),
+    title: row.item_title || `${displayDocumentTitle(row.title)}, page ${row.page_number}`,
     transcriptUrl: row.file_number
       ? documentFileUrl(row.document_id, row.meeting_date, row.kind, row.file_number)
       : documentUrl(row.document_id, row.meeting_date, row.kind, row.page_number),

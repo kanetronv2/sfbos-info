@@ -1,6 +1,66 @@
 import { neon } from "@neondatabase/serverless";
 import type { SearchResult } from "./types";
 
+export interface SemanticReference {
+  entityType: "legislative-item" | "page" | "comment";
+  entityKey: string;
+  score: number;
+}
+
+export async function retrieveSemanticReferences(
+  query: string,
+  entityTypes: SemanticReference["entityType"][],
+  limit: number,
+) {
+  const endpoint = process.env.EMBEDDING_API_URL;
+  const model = process.env.EMBEDDING_MODEL;
+  if (!endpoint || !model || !process.env.DATABASE_URL) {
+    return { references: [] as SemanticReference[], model: null, fallbackReason: "Embedding provider is not configured" };
+  }
+  try {
+    const [queryEmbedding] = await requestEmbeddings([query]);
+    if (!queryEmbedding) throw new Error("Provider returned no query embedding");
+    const sql = neon(process.env.DATABASE_URL);
+    const rows = await sql.query(
+      `SELECT se.entity_type, se.entity_key, cosine.score::float
+       FROM semantic_embeddings se
+       CROSS JOIN LATERAL (
+         SELECT coalesce(
+           sum(query_value * stored_value) /
+           nullif(sqrt(sum(query_value * query_value)) * sqrt(sum(stored_value * stored_value)), 0),
+           0
+         ) AS score
+         FROM unnest($2::double precision[]) WITH ORDINALITY q(query_value, position)
+         JOIN unnest(se.embedding) WITH ORDINALITY e(stored_value, position) USING (position)
+       ) cosine
+       WHERE se.model = $1
+         AND se.dimensions = $3
+         AND se.entity_type = ANY($4::text[])
+       ORDER BY cosine.score DESC
+       LIMIT $5`,
+      [model, queryEmbedding, queryEmbedding.length, entityTypes, limit],
+    );
+    if (!rows.length) {
+      return { references: [] as SemanticReference[], model, fallbackReason: "No corpus embeddings were available" };
+    }
+    return {
+      references: rows.map((row) => ({
+        entityType: row.entity_type as SemanticReference["entityType"],
+        entityKey: row.entity_key as string,
+        score: Number(row.score),
+      })),
+      model,
+      fallbackReason: null,
+    };
+  } catch (error) {
+    return {
+      references: [] as SemanticReference[],
+      model,
+      fallbackReason: error instanceof Error ? error.message : "Embedding retrieval failed",
+    };
+  }
+}
+
 export async function rerankWithEmbeddings(query: string, results: SearchResult[], limit: number) {
   const endpoint = process.env.EMBEDDING_API_URL;
   const model = process.env.EMBEDDING_MODEL;

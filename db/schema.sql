@@ -81,6 +81,9 @@ ALTER TABLE legislative_items ADD COLUMN IF NOT EXISTS direct_search_vector tsve
 CREATE INDEX IF NOT EXISTS legislative_items_direct_search_vector_idx
   ON legislative_items USING gin (direct_search_vector);
 
+CREATE INDEX IF NOT EXISTS legislative_items_title_trgm_idx
+  ON legislative_items USING gin (lower(title) gin_trgm_ops);
+
 CREATE TABLE IF NOT EXISTS roll_calls (
   id bigserial PRIMARY KEY,
   item_id bigint NOT NULL REFERENCES legislative_items(id) ON DELETE CASCADE,
@@ -146,6 +149,9 @@ CREATE INDEX IF NOT EXISTS public_comments_search_vector_idx
 
 CREATE INDEX IF NOT EXISTS public_comments_document_id_idx
   ON public_comments (document_id);
+
+CREATE INDEX IF NOT EXISTS public_comments_speaker_trgm_idx
+  ON public_comments USING gin (lower(speaker) gin_trgm_ops);
 
 COMMENT ON TABLE public_comments IS
   'Speaker-level public-comment summaries parsed from official Board meeting minutes.';
@@ -348,6 +354,34 @@ CREATE TABLE IF NOT EXISTS semantic_embeddings (
   PRIMARY KEY (entity_type, entity_key, model)
 );
 
+CREATE TABLE IF NOT EXISTS search_entities (
+  id bigserial PRIMARY KEY,
+  legislative_item_id bigint NOT NULL REFERENCES legislative_items(id) ON DELETE CASCADE,
+  entity_type text NOT NULL CHECK (entity_type IN (
+    'address', 'amount', 'party', 'person', 'department', 'housing-units', 'file-number', 'topic'
+  )),
+  normalized_value text NOT NULL,
+  display_value text NOT NULL,
+  numeric_value numeric,
+  confidence numeric(4,3) NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+  parser_version text NOT NULL,
+  search_vector tsvector GENERATED ALWAYS AS (
+    setweight(to_tsvector('english', coalesce(display_value, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(normalized_value, '')), 'B')
+  ) STORED,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (legislative_item_id, entity_type, normalized_value)
+);
+
+CREATE INDEX IF NOT EXISTS search_entities_vector_idx
+  ON search_entities USING gin (search_vector);
+
+CREATE INDEX IF NOT EXISTS search_entities_value_trgm_idx
+  ON search_entities USING gin (normalized_value gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS search_entities_item_idx
+  ON search_entities (legislative_item_id);
+
 COMMENT ON TABLE evidence_spans IS
   'Compact page-addressable parser evidence with extraction confidence and parser provenance. Per-voter confidence is stored on normalized roll-call positions.';
 
@@ -356,3 +390,6 @@ COMMENT ON TABLE document_version_pages IS
 
 COMMENT ON TABLE change_log IS
   'Append-only public change feed for reconciled entities and document versions.';
+
+COMMENT ON TABLE search_entities IS
+  'Versioned searchable entities extracted from legislative records for field-aware retrieval.';

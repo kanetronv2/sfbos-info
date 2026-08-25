@@ -35,6 +35,7 @@ paths:
     get:
       operationId: searchBoardRecords
       summary: Search Board of Supervisors records
+      description: Unified, file-first retrieval across legislative records, votes, public comments, and PDF pages. Natural-language questions infer common vote filters.
       parameters:
         - name: q
           in: query
@@ -46,19 +47,37 @@ paths:
         - name: kind
           in: query
           schema: { type: string, enum: [agenda, minutes] }
+        - name: from
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026 }
+        - name: to
+          in: query
+          schema: { type: integer, minimum: 2012, maximum: 2026 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [all, legislation, votes, comments, pages], default: all }
+        - name: supervisor
+          in: query
+          schema: { type: string }
+        - name: position
+          in: query
+          schema: { type: string, enum: [aye, no, absent, excused] }
+        - name: final
+          in: query
+          schema: { type: boolean, default: false }
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
         - name: mode
           in: query
-          description: Hybrid reranking is used only when a provider-neutral embedding endpoint and page embeddings are configured; otherwise the response reports a lexical fallback.
-          schema: { type: string, enum: [lexical, hybrid], default: lexical }
+          description: Hybrid retrieval independently searches corpus embeddings and fuses them with lexical results. The response reports a lexical fallback when embeddings are unavailable.
+          schema: { type: string, enum: [lexical, hybrid], default: hybrid }
         - name: format
           in: query
           schema: { type: string, enum: [json, md] }
       responses:
         "200":
-          description: Matching PDF pages, ranked by relevance.
+          description: Grouped legislative records, vote evidence, public comments, and PDF passages ranked by relevance.
           content:
             application/json:
               schema:
@@ -242,6 +261,14 @@ components:
         query: { type: string }
         interpretedQueries: { type: array, items: { type: string } }
         filters: { type: object }
+        intent: { type: object }
+        facets:
+          type: object
+          properties:
+            legislation: { type: integer }
+            votes: { type: integer }
+            comments: { type: integer }
+            pages: { type: integer }
         total: { type: integer }
         returned: { type: integer }
         source: { type: string, enum: [postgres, preview] }
@@ -264,6 +291,7 @@ components:
               meetingDate: { type: string, format: date }
               year: { type: integer }
               kind: { type: string, enum: [agenda, minutes] }
+              resultType: { type: string, enum: [legislation, votes, comments, pages] }
               title: { type: string }
               transcriptUrl: { type: string, format: uri }
               markdownUrl: { type: string, format: uri }
@@ -273,6 +301,15 @@ components:
                 description: Present when transcriptUrl targets a structured legislative-record row.
                 type: string
               snippet: { type: string }
+              speaker: { type: string }
+              groupCount: { type: integer }
+              action: { type: string }
+              actionType: { type: string }
+              isFinal: { type: boolean }
+              recordedPosition: { type: string, enum: [aye, no, absent, excused] }
+              ayes: { type: array, items: { type: string } }
+              noes: { type: array, items: { type: string } }
+              extracted: { type: object }
               score: { type: number }
     RollCall:
       type: object

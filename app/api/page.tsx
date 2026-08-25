@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonExample = `GET /api/search?q=affordable+housing&year=2018&kind=minutes
+const jsonExample = `GET /api/search?q=affordable+housing&from=2018&to=2020&type=legislation
 Accept: application/json`;
 
-const markdownExample = `GET /api/search.md?q=who+voted+against+housing&year=2018
+const markdownExample = `GET /api/search.md?q=who+voted+against+housing&supervisor=Chan&position=no&type=votes
 Accept: text/markdown`;
 
 const itemExample = `GET /api/items.md?q=housing+production&voter=Chan&position=no&final=true&groupBy=file&from=2021&to=2026
@@ -56,8 +56,9 @@ export default function ApiPage() {
         <p className="docs-kicker">PUBLIC · READ-ONLY · CORS ENABLED</p>
         <h1>Search API</h1>
         <p className="docs-lede">
-          Page search across agendas and minutes, plus action-aware legislative-item and
-          roll-call search for researching votes. Every response links to the official record.
+          Unified search across legislative files, votes, public comments, and page text.
+          Natural-language questions are routed to action-aware evidence, and every response links
+          to the official record.
         </p>
 
         <section>
@@ -74,15 +75,21 @@ export default function ApiPage() {
           <div className="parameter-grid">
             <code>q</code><p>Required. Web-style search query, 2–300 characters.</p>
             <code>year</code><p>Optional. Calendar year from 2012 through 2026.</p>
+            <code>from / to</code><p>Optional inclusive year range from 2012 through 2026.</p>
             <code>kind</code><p>Optional. <code>agenda</code> or <code>minutes</code>.</p>
+            <code>type</code><p>Optional. <code>all</code>, <code>legislation</code>, <code>votes</code>, <code>comments</code>, or <code>pages</code>.</p>
+            <code>supervisor</code><p>Optional supervisor surname. Natural-language questions can infer it.</p>
+            <code>position</code><p>Optional. <code>aye</code>, <code>no</code>, <code>absent</code>, or <code>excused</code>.</p>
+            <code>final</code><p>Optional boolean. Restricts vote records to likely final actions.</p>
             <code>limit</code><p>Optional. 1–50 results; defaults to 20.</p>
-            <code>mode</code><p>Optional. <code>lexical</code> or <code>hybrid</code>. Hybrid reports a lexical fallback when embeddings are unavailable.</p>
+            <code>mode</code><p>Optional. <code>lexical</code> or <code>hybrid</code>, the default. Hybrid retrieves independent semantic candidates and reports a lexical fallback when embeddings are unavailable.</p>
             <code>format</code><p>Optional. <code>json</code> or <code>md</code>.</p>
           </div>
           <p>
-            When a page belongs to a parsed legislative item, <code>transcriptUrl</code> targets that
-            structured record row. Other matches retain a page anchor. Every result also has a
-            separate <code>officialUrl</code> for the authoritative City PDF.
+            Legislative files are grouped and ranked ahead of repeated PDF-page matches. Results
+            identify their type and can include the matched action, recorded position, roll call,
+            extracted addresses, unit counts, amounts, and parties. <code>transcriptUrl</code> targets
+            the structured record row; <code>officialUrl</code> targets the authoritative City PDF.
           </p>
         </section>
 

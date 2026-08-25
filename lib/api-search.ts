@@ -1,5 +1,6 @@
-import { searchDocuments } from "./search";
-import type { DocumentKind, SearchResponse } from "./types";
+import { searchAllRecords } from "./unified-search";
+import type { VotePosition } from "./item-types";
+import type { DocumentKind, SearchResponse, SearchResultType } from "./types";
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 300;
@@ -12,7 +13,13 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   const rawYear = url.searchParams.get("year");
   const rawKind = url.searchParams.get("kind");
   const rawLimit = url.searchParams.get("limit");
-  const rawMode = url.searchParams.get("mode") ?? "lexical";
+  const rawMode = url.searchParams.get("mode") ?? "hybrid";
+  const rawType = url.searchParams.get("type") ?? "all";
+  const rawFrom = url.searchParams.get("from");
+  const rawTo = url.searchParams.get("to");
+  const supervisor = (url.searchParams.get("supervisor") ?? url.searchParams.get("voter") ?? "").trim() || null;
+  const rawPosition = url.searchParams.get("position");
+  const final = parseBoolean(url.searchParams.get("final"));
   const markdown =
     forceMarkdown ||
     ["md", "markdown"].includes((url.searchParams.get("format") ?? "").toLowerCase()) ||
@@ -35,7 +42,20 @@ export async function handleSearch(request: Request, forceMarkdown = false) {
   if (limit === null) return errorResponse(`limit must be an integer from 1 through ${MAX_LIMIT}`, markdown);
 
   if (rawMode !== "lexical" && rawMode !== "hybrid") return errorResponse("mode must be lexical or hybrid", markdown);
-  const response = await searchDocuments({ query, year, kind, limit, mode: rawMode });
+  const type = parseType(rawType);
+  if (!type) return errorResponse("type must be all, legislation, votes, comments, or pages", markdown);
+  const fromYear = parseYear(rawFrom);
+  const toYear = parseYear(rawTo);
+  if ((rawFrom && parseYear(rawFrom) === null) || (rawTo && parseYear(rawTo) === null)) {
+    return errorResponse("from and to must be years from 2012 through 2026", markdown);
+  }
+  if (fromYear !== null && toYear !== null && fromYear > toYear) return errorResponse("from must be less than or equal to to", markdown);
+  const position = parsePosition(rawPosition);
+  if (rawPosition && !position) return errorResponse("position must be aye, no, absent, or excused", markdown);
+  if (final === null) return errorResponse("final must be true or false", markdown);
+  const response = await searchAllRecords({
+    query, year, kind, type, fromYear, toYear, supervisor, position, final, limit, mode: rawMode,
+  });
   if (markdown) {
     return new Response(toMarkdown(response), { headers: markdownHeaders() });
   }
@@ -51,6 +71,25 @@ function parseYear(value: string | null) {
 
 function parseKind(value: string | null): DocumentKind | null {
   return value === "agenda" || value === "minutes" ? value : null;
+}
+
+function parseType(value: string): SearchResultType | null {
+  return ["all", "legislation", "votes", "comments", "pages"].includes(value)
+    ? value as SearchResultType
+    : null;
+}
+
+function parsePosition(value: string | null): VotePosition | null {
+  return value && ["aye", "no", "absent", "excused"].includes(value)
+    ? value as VotePosition
+    : null;
+}
+
+function parseBoolean(value: string | null) {
+  if (!value) return false;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  return null;
 }
 
 function parseLimit(value: string | null) {
@@ -89,6 +128,11 @@ function toMarkdown(response: SearchResponse) {
   const filterDescription = [
     response.filters.year ? `year ${response.filters.year}` : null,
     response.filters.kind ? response.filters.kind : null,
+    response.filters.type && response.filters.type !== "all" ? response.filters.type : null,
+    response.filters.fromYear && response.filters.toYear ? `${response.filters.fromYear}-${response.filters.toYear}` : null,
+    response.filters.supervisor ? `supervisor ${response.filters.supervisor}` : null,
+    response.filters.position ? `position ${response.filters.position}` : null,
+    response.filters.final ? "final actions only" : null,
   ].filter(Boolean).join(", ");
 
   const lines = [
@@ -99,7 +143,7 @@ function toMarkdown(response: SearchResponse) {
       ? `- Also interpreted as: ${response.interpretedQueries.map((query) => `\`${escapeInline(query)}\``).join(", ")}`
       : null,
     `- Filters: ${filterDescription || "none"}`,
-    `- Matching pages: ${response.total}`,
+    `- Matching records: ${response.total}`,
     `- Results returned: ${response.returned}`,
     `- Index: ${response.source === "postgres" ? "complete corpus" : "preview only"}`,
     `- Retrieval: ${response.retrieval.used}${response.retrieval.fallbackReason ? ` (fallback: ${response.retrieval.fallbackReason})` : ""}`,
@@ -116,8 +160,13 @@ function toMarkdown(response: SearchResponse) {
       "",
       `- Meeting date: ${result.meetingDate}`,
       `- Document: ${result.kind}`,
+      `- Result type: ${result.resultType ?? "page"}`,
       `- PDF page: ${result.page}`,
       result.fileNumber ? `- Structured legislative record: File ${result.fileNumber}` : null,
+      result.recordedPosition ? `- Recorded position: ${result.recordedPosition}` : null,
+      result.action ? `- Action: ${result.action.replace(/\s+/g, " ").trim()}` : null,
+      result.extracted?.housingUnits.length ? `- Housing-unit counts: ${result.extracted.housingUnits.join(", ")}` : null,
+      result.extracted?.addresses.length ? `- Addresses: ${result.extracted.addresses.join("; ")}` : null,
       `- [Focused Markdown excerpt](${result.markdownUrl})`,
       `- [Official source PDF](${result.officialUrl})`,
       "",

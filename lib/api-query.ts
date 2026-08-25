@@ -2,19 +2,11 @@ import { searchPublicComments } from "./comment-search";
 import { searchLegislativeItems } from "./item-search";
 import { searchDocuments } from "./search";
 import { aggregateHousing } from "./aggregates";
-import type { LegislativeItemResult, RollCall } from "./item-types";
+import { interpretSearchQuestion } from "./search-intent";
+import type { LegislativeItemResult, RollCall, VotePosition } from "./item-types";
 
-const MIN_YEAR = 2012;
-const MAX_YEAR = 2026;
 const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 500;
-
-const supervisorNames = [
-  "Avalos", "Breed", "Brown", "Campos", "Chan", "Christensen", "Chiu", "Chu", "Cohen",
-  "Dorsey", "Elsbernd", "Engardio", "Farrell", "Fewer", "Fielder", "Haney", "Kim", "Mahmood",
-  "Mandelman", "Mar", "Melgar", "Olague", "Peskin", "Preston", "Ronen", "Safai", "Sauter",
-  "Sheehy", "Stefani", "Tang", "Walton", "Wiener", "Yee",
-];
 
 export async function handleEvidenceQuery(request: Request, forceMarkdown = false) {
   const url = new URL(request.url);
@@ -31,7 +23,7 @@ export async function handleEvidenceQuery(request: Request, forceMarkdown = fals
     );
   }
 
-  const interpretation = interpretQuestion(question);
+  const interpretation = interpretSearchQuestion(question);
   const [items, pages, comments, deterministicAggregate] = await Promise.all([
     searchLegislativeItems({
       query: interpretation.searchQuery,
@@ -93,52 +85,9 @@ export async function handleEvidenceQuery(request: Request, forceMarkdown = fals
   return Response.json(response, { headers: publicHeaders() });
 }
 
-function interpretQuestion(question: string) {
-  const withoutUrl = question.replace(/https?:\/\/\S+/gi, " ");
-  const voter = supervisorNames.find((name) => new RegExp(`\\b${name}\\b`, "i").test(withoutUrl)) ?? null;
-  const years = [...withoutUrl.matchAll(/\b(20\d{2})\b/g)]
-    .map((match) => Number(match[1]))
-    .filter((year) => year >= MIN_YEAR && year <= MAX_YEAR);
-  const housingIntent = /\b(?:housing|dwelling|residential)\s+units?\b|\bhousing\b/i.test(withoutUrl);
-  const commentIntent = /\b(?:public comment|commenter|speaker|testif(?:y|ied|ies))\b/i.test(withoutUrl);
-  const voteIntent = /\b(?:vote|voted|ayes?|noes?|against|support|oppose|passed|approved)\b/i.test(withoutUrl);
-  const finalOnly = /\b(?:final|finally|enacted|adopted)\b/i.test(withoutUrl);
-  const recordedPosition = /\b(?:against|oppos(?:e|ed|ition)|voted?\s+no)\b/i.test(withoutUrl)
-    ? "no" as const
-    : /\b(?:support(?:ed)?|voted?\s+aye|voted?\s+yes)\b/i.test(withoutUrl)
-      ? "aye" as const
-      : null;
-
-  let searchQuery: string;
-  if (housingIntent) {
-    searchQuery = '"dwelling units" OR "residential unit" OR "housing units"';
-  } else {
-    searchQuery = withoutUrl
-      .replace(voter ? new RegExp(`\\b${voter}\\b`, "gi") : /$^/, " ")
-      .replace(/\b(?:how|many|much|what|when|where|which|who|why|did|does|has|have|use|find|show|tell|address|addresses|vote|voted|against|support|supported|oppose|opposed)\b/gi, " ")
-      .replace(/\b20\d{2}\b/g, " ")
-      .replace(/[^\p{L}\p{N}'"-]+/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (searchQuery.length < 2) searchQuery = withoutUrl.trim();
-  }
-
-  return {
-    searchQuery,
-    voter,
-    recordedPosition,
-    fromYear: years.length ? Math.min(...years) : MIN_YEAR,
-    toYear: years.length ? Math.max(...years) : MAX_YEAR,
-    voteIntent,
-    housingIntent,
-    commentIntent,
-    finalOnly,
-  };
-}
-
 type EvidenceResponse = {
   question: string;
-  interpretation: ReturnType<typeof interpretQuestion>;
+  interpretation: ReturnType<typeof interpretSearchQuestion>;
   legislativeItems: Awaited<ReturnType<typeof searchLegislativeItems>>;
   pageMatches: Awaited<ReturnType<typeof searchDocuments>>;
   publicComments: Awaited<ReturnType<typeof searchPublicComments>> | null;
@@ -242,7 +191,7 @@ function toMarkdown(response: EvidenceResponse) {
 function relevantRollCalls(
   item: LegislativeItemResult,
   voter: string | null,
-  position: "aye" | "no" | null,
+  position: VotePosition | null,
 ) {
   if (!voter) return item.rollCalls.slice(0, 4);
   const matching = item.rollCalls.filter((rollCall) => {

@@ -29,6 +29,14 @@ const aliases: Array<{ pattern: RegExp; queries: string[] }> = [
     pattern: /\brent control(?:led)?\b/i,
     queries: ['"rent control"', '"rent controlled"'],
   },
+  {
+    pattern: /\bfentanyl\b/i,
+    queries: ['fentanyl', '"drug overdose"', 'opioid overdose'],
+  },
+  {
+    pattern: /\burban alchemy\b/i,
+    queries: ['"Urban Alchemy" agreement', '"Urban Alchemy" contract'],
+  },
 ];
 
 const questionWords = new Set([
@@ -40,6 +48,14 @@ const questionWords = new Set([
 
 export function expandQuery(query: string): ExpandedQuery {
   const interpreted = new Set<string>();
+
+  const normalized = query
+    .replace(/\bSt\.?\b/gi, "Street")
+    .replace(/\bAve\.?\b/gi, "Avenue")
+    .replace(/\bBlvd\.?\b/gi, "Boulevard")
+    .replace(/\bRd\.?\b/gi, "Road")
+    .replace(/\bcontracts?\b/gi, "agreement");
+  if (normalized.toLowerCase() !== query.toLowerCase()) interpreted.add(normalized);
 
   for (const alias of aliases) {
     if (alias.pattern.test(query)) alias.queries.forEach((value) => interpreted.add(value));

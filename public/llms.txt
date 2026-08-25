@@ -64,16 +64,20 @@ Use speaker-level search for public comment:
 
 These are clerk-written summaries, not verbatim transcripts.
 
-Use page search for broad discovery and passages outside legislative-file blocks:
+Use unified search for discovery. It returns grouped legislative files first, then public comments
+and PDF passages. Natural-language questions infer obvious supervisor and recorded-position filters:
 
 - Search: https://sfbos.info/api/search.md?q={URL_ENCODED_QUERY}
 - Filter by year: add `&year=2018`
+- Filter by inclusive range: add `&from=2018&to=2020`
+- Filter by result type: add `&type=legislation`, `&type=votes`, `&type=comments`, or `&type=pages`
+- Filter a vote: add `&supervisor=Chan&position=no&final=true`
 - Filter by document: add `&kind=minutes` or `&kind=agenda`
 - Limit results: add `&limit=50`
-- Optional hybrid reranking: add `&mode=hybrid`. The response always reports whether hybrid retrieval was used or fell back to lexical search.
+- Hybrid retrieval is the default. It independently retrieves semantic candidates when embeddings are configured and always reports whether it was used or fell back to lexical search.
 
 Example:
-https://sfbos.info/api/search.md?q=housing+vote&year=2018&kind=minutes&limit=50
+https://sfbos.info/api/search.md?q=who+voted+against+housing+in+2018&type=votes&limit=50
 
 Important: results are evidence, not a synthesized answer. Read the relevant extracted-text page,
 follow the official PDF link, distinguish proposals from final actions, avoid double-counting repeated

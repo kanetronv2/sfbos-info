@@ -13,8 +13,10 @@
     "db:comments": "node --env-file=.env.local scripts/ingest-comments.mjs",
     "db:sync-structured": "node --env-file=.env.local scripts/sync-structured-records.mjs",
     "db:embeddings": "node --env-file=.env.local scripts/embed-pages.mjs",
+    "db:entities": "node --env-file=.env.local scripts/index-search-entities.mjs",
     "test:infra": "node scripts/smoke.mjs",
-    "test:model-flow": "node scripts/model-flow.mjs"
+    "test:model-flow": "node scripts/model-flow.mjs",
+    "test:search": "node scripts/search-eval.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
