@@ -81,6 +81,7 @@ function toMarkdown(
         "",
         `- Pages: ${pageRange(item.startPage, item.endPage)}`,
       );
+      if (item.sponsorText) lines.push(`- Sponsors: ${item.sponsorText}`);
       for (const rollCall of item.rollCalls) {
         lines.push(
           `- Vote ${rollCall.sequence}: ${rollCall.actionType}${rollCall.isFinal ? ", likely final" : ""}`,

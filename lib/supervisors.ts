@@ -22,6 +22,9 @@ export interface SupervisorNameLink {
   slug: string;
   displayName: string;
   names: string[];
+  active: boolean;
+  termStart: string | null;
+  termEnd: string | null;
 }
 
 export interface SupervisorContact {
@@ -108,7 +111,8 @@ export const listSupervisorNameLinks = cache(async (): Promise<SupervisorNameLin
   if (!process.env.DATABASE_URL) return [];
   const sql = neon(process.env.DATABASE_URL);
   const rows = await sql.query(
-    `SELECT s.slug, s.display_name, s.family_name,
+    `SELECT s.slug, s.display_name, s.family_name, s.active,
+       s.term_start::text, s.term_end::text,
        coalesce(array_agg(a.alias ORDER BY length(a.alias) DESC)
          FILTER (WHERE a.id IS NOT NULL), ARRAY[]::text[]) AS aliases
      FROM supervisors s
@@ -125,6 +129,9 @@ export const listSupervisorNameLinks = cache(async (): Promise<SupervisorNameLin
     return {
       slug: row.slug,
       displayName: row.display_name,
+      active: row.active,
+      termStart: row.term_start,
+      termEnd: row.term_end,
       names: [...new Set([
         row.display_name,
         shortDisplayName,
@@ -134,6 +141,19 @@ export const listSupervisorNameLinks = cache(async (): Promise<SupervisorNameLin
     };
   });
 });
+
+export function prioritizeSupervisorLinksForDate(links: SupervisorNameLink[], meetingDate: string) {
+  return [...links].sort((left, right) =>
+    supervisorDateScore(left, meetingDate) - supervisorDateScore(right, meetingDate));
+}
+
+function supervisorDateScore(supervisor: SupervisorNameLink, meetingDate: string) {
+  if (supervisor.termStart && supervisor.termEnd) {
+    return meetingDate >= supervisor.termStart && meetingDate <= supervisor.termEnd ? 3 : 0;
+  }
+  if (supervisor.active && meetingDate.slice(0, 4) >= String(new Date().getUTCFullYear() - 2)) return 2;
+  return 1;
+}
 
 export const getSupervisor = cache(async (slug: string, position?: SupervisorPosition): Promise<SupervisorProfile | null> => {
   if (!process.env.DATABASE_URL || !/^[a-z0-9-]+$/.test(slug)) return null;

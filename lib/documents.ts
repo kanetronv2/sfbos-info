@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { cache } from "react";
 import { displayDocumentTitle } from "./document-title";
 import { documentPath } from "./document-url";
+import { extractSponsorText } from "./item-sponsors";
 import type { RollCall } from "./item-types";
 import type { DocumentKind } from "./types";
 
@@ -28,6 +29,7 @@ export interface EvidenceItem {
   title: string;
   startPage: number;
   endPage: number;
+  sponsorText: string | null;
   rollCalls: RollCall[];
   extractionConfidence: number | null;
   parserVersion: string | null;
@@ -61,6 +63,7 @@ interface ItemRow {
   id: string;
   file_number: string;
   title: string;
+  content: string;
   start_page: number;
   end_page: number;
   roll_calls: RollCall[];
@@ -126,6 +129,7 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
           i.id::text,
           i.file_number,
           i.title,
+          i.content,
           i.start_page,
           i.end_page,
           max(es.confidence)::float AS extraction_confidence,
@@ -196,6 +200,7 @@ export const getDocumentEvidence = cache(async (id: string): Promise<DocumentEvi
       title: item.title,
       startPage: item.start_page,
       endPage: item.end_page,
+      sponsorText: extractSponsorText(item.content),
       rollCalls: item.roll_calls,
       extractionConfidence: item.extraction_confidence === null ? null : Number(item.extraction_confidence),
       parserVersion: item.parser_version,

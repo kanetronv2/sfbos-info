@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { documentMarkdownPath, documentSlug, documentUrl } from "@/lib/document-url";
 import { getDocumentEvidence } from "@/lib/documents";
-import { listSupervisorNameLinks } from "@/lib/supervisors";
+import { listSupervisorNameLinks, prioritizeSupervisorLinksForDate } from "@/lib/supervisors";
 import { SiteHeader } from "@/components/site-header";
 import { TargetDetails } from "@/components/target-details";
 import { SupervisorLinkedText } from "@/components/supervisor-linked-text";
@@ -43,6 +43,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
     listSupervisorNameLinks(),
   ]);
   if (!document) notFound();
+  const datedSupervisorLinks = prioritizeSupervisorLinksForDate(supervisorLinks, document.meetingDate);
 
   const expectedSlug = documentSlug(document.meetingDate, document.kind);
   if (slug?.length !== 1 || slug[0] !== expectedSlug) permanentRedirect(document.transcriptPath);
@@ -176,6 +177,12 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                     Extraction confidence: {item.extractionConfidence === null ? "not scored" : `${Math.round(item.extractionConfidence * 100)}%`}
                     {item.parserVersion ? ` · parser ${item.parserVersion}` : ""}
                   </p>
+                  {item.sponsorText && (
+                    <p className="structured-sponsors">
+                      <strong>Sponsors</strong>
+                      <span><SupervisorLinkedText text={item.sponsorText} supervisors={datedSupervisorLinks} /></span>
+                    </p>
+                  )}
                   {item.rollCalls.length ? (
                     <div className="structured-votes">
                       {item.rollCalls.map((rollCall) => (
@@ -185,10 +192,10 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                             {rollCall.isFinal && <strong>LIKELY FINAL</strong>}
                           </div>
                           <p>{rollCall.action || "Action text unavailable."}</p>
-                          <VoteLine label="Ayes" names={rollCall.ayes} supervisors={supervisorLinks} showWhenEmpty />
-                          <VoteLine label="Noes" names={rollCall.noes} supervisors={supervisorLinks} showWhenEmpty />
-                          <VoteLine label="Absent" names={rollCall.absent} supervisors={supervisorLinks} />
-                          <VoteLine label="Excused" names={rollCall.excused} supervisors={supervisorLinks} />
+                          <VoteLine label="Ayes" names={rollCall.ayes} supervisors={datedSupervisorLinks} showWhenEmpty />
+                          <VoteLine label="Noes" names={rollCall.noes} supervisors={datedSupervisorLinks} showWhenEmpty />
+                          <VoteLine label="Absent" names={rollCall.absent} supervisors={datedSupervisorLinks} />
+                          <VoteLine label="Excused" names={rollCall.excused} supervisors={datedSupervisorLinks} />
                         </article>
                       ))}
                     </div>
@@ -227,7 +234,7 @@ export default async function DocumentEvidencePage({ params }: EvidencePageProps
                   </div>
                 </header>
                 <div className="page-text">
-                  <SupervisorLinkedText text={page.content} supervisors={supervisorLinks} />
+                  <SupervisorLinkedText text={page.content} supervisors={datedSupervisorLinks} />
                 </div>
               </section>
             ))}

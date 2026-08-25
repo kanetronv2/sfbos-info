@@ -319,6 +319,8 @@ footer div:last-child { display: flex; gap: 14px; }
 .structured-item[open] summary { margin-bottom: 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
 .structured-votes { display: grid; gap: 10px; padding: 0 16px; }
 .structured-provenance { margin: 0 16px 14px; color: var(--muted); font: 9px var(--mono); letter-spacing: .05em; }
+.structured-sponsors { display: grid; grid-template-columns: 78px 1fr; gap: 14px; margin: 0 16px 14px; padding: 11px 13px; border-left: 3px solid var(--accent); background: var(--panel); font: 10px/1.55 var(--mono); }
+.structured-sponsors strong { color: var(--muted); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
 .structured-votes article { padding: 22px; border: 1px solid var(--line); background: var(--panel); }
 .structured-votes article > div { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .structured-votes article > div span, .structured-votes article > div strong { padding: 3px 6px; border: 1px solid var(--line); font: 8px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
