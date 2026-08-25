@@ -11,9 +11,6 @@ const examples = [
   "public comment",
 ];
 
-const examplePrompt =
-  "How many housing units has Connie Chan voted against? Which addresses? Use https://sfbos.info";
-
 export function SearchApp() {
   const [query, setQuery] = useState("");
   const [year, setYear] = useState("");
@@ -21,9 +18,7 @@ export function SearchApp() {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
-  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const urlStateTimer = window.setTimeout(() => {
@@ -47,7 +42,6 @@ export function SearchApp() {
     return () => {
       window.clearTimeout(urlStateTimer);
       window.removeEventListener("keydown", onKeyDown);
-      if (copyResetRef.current) clearTimeout(copyResetRef.current);
     };
     // Initial URL state is intentionally read once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,18 +84,6 @@ export function SearchApp() {
   function chooseExample(example: string) {
     setQuery(example);
     void runSearch(example, year, kind);
-  }
-
-  async function copyExamplePrompt() {
-    try {
-      await navigator.clipboard.writeText(examplePrompt);
-      setCopyState("copied");
-    } catch {
-      setCopyState("error");
-    }
-
-    if (copyResetRef.current) clearTimeout(copyResetRef.current);
-    copyResetRef.current = setTimeout(() => setCopyState("idle"), 2000);
   }
 
   return (
@@ -164,50 +146,6 @@ export function SearchApp() {
               </div>
             </div>
           </form>
-
-          {!response && !loading && (
-            <aside className="model-callout" aria-labelledby="model-callout-title">
-              <div>
-                <p className="model-callout-kicker">DESIGNED FOR LLMs</p>
-                <h2 id="model-callout-title">Search here, or give the site to your preferred model.</h2>
-                <p>
-                  The index above is available for direct research. For deeper questions, the most
-                  effective way to use this archive is to give <code>https://sfbos.info</code> to any
-                  LLM. It can query the structured API, read Markdown, and follow official City sources.
-                </p>
-                <a href="/llms.txt">MODEL ACCESS GUIDE ↗</a>
-              </div>
-              <div className="example-prompt">
-                <div className="example-prompt-header">
-                  <span className="example-prompt-label">EXAMPLE PROMPT</span>
-                  <div className="copy-prompt-control">
-                    <span className="copy-prompt-status" role="status" aria-live="polite">
-                      {copyState === "copied" ? "COPIED" : copyState === "error" ? "COPY FAILED" : ""}
-                    </span>
-                    <button
-                      className="copy-prompt-button"
-                      type="button"
-                      onClick={() => void copyExamplePrompt()}
-                      aria-label={copyState === "copied" ? "Example prompt copied" : "Copy example prompt"}
-                      title="Copy example prompt"
-                    >
-                      {copyState === "copied" ? (
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                          <path d="m5 12 4 4L19 6" />
-                        </svg>
-                      ) : (
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                          <rect x="8" y="8" width="11" height="11" rx="1" />
-                          <path d="M16 8V5H5v11h3" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <code>{examplePrompt}</code>
-              </div>
-            </aside>
-          )}
 
           {!response && !loading && (
             <div className="examples">

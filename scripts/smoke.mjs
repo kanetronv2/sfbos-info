@@ -152,9 +152,15 @@ const analyticsPassed = homeResponse.ok &&
 console.log(`${analyticsPassed ? "PASS" : "FAIL"}  GA4 measurement tag`);
 if (!analyticsPassed) failures += 1;
 
+const modelCalloutRemoved = homeResponse.ok &&
+  !homeHtml.includes("DESIGNED FOR LLM") &&
+  !homeHtml.includes("model-callout");
+console.log(`${modelCalloutRemoved ? "PASS" : "FAIL"}  homepage model callout removed`);
+if (!modelCalloutRemoved) failures += 1;
+
 if (failures) {
   console.error(`${failures} infrastructure smoke test${failures === 1 ? "" : "s"} failed.`);
   process.exitCode = 1;
 } else {
-  console.log(`All ${cases.length + 5} infrastructure smoke tests passed against ${baseUrl}.`);
+  console.log(`All ${cases.length + 6} infrastructure smoke tests passed against ${baseUrl}.`);
 }
