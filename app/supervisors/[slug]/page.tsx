@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
 import { getSiteUrl } from "@/lib/site-url";
 import { getDistrictNeighborhoods } from "@/lib/supervisor-districts";
 import { getSupervisor } from "@/lib/supervisors";
@@ -11,10 +12,20 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const profile = await getSupervisor((await params).slug);
   if (!profile) return { title: "Supervisor not found" };
+  const title = `${profile.displayName}: San Francisco Supervisor Profile and Recorded Votes`;
+  const description = `${profile.active ? "Current office contact information and " : "Identity information and "}page-addressable evidence for recorded San Francisco Board of Supervisors roll-call positions attributed to ${profile.displayName}.`;
   return {
-    title: `${profile.displayName} supervisor profile and recorded votes`,
-    description: `${profile.active ? "Current office contact information and " : "Identity information and "}page-addressable evidence for recorded San Francisco Board of Supervisors roll-call positions attributed to ${profile.displayName}.`,
+    title,
+    description,
     alternates: { canonical: `/supervisors/${profile.slug}` },
+    openGraph: {
+      type: "profile",
+      url: `/supervisors/${profile.slug}`,
+      title,
+      description,
+      firstName: profile.displayName.split(" ")[0],
+      lastName: profile.displayName.split(" ").slice(1).join(" "),
+    },
   };
 }
 
@@ -39,19 +50,29 @@ export default async function SupervisorPage({ params }: Props) {
       },
     } : {}),
   };
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    url: `${siteUrl}/supervisors/${profile.slug}`,
-    mainEntity: person,
-    description: "A data profile of recorded roll-call positions extracted from official public minutes.",
-  };
+  const profileUrl = `${siteUrl}/supervisors/${profile.slug}`;
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      name: `${profile.displayName}: San Francisco Supervisor Profile and Recorded Votes`,
+      url: profileUrl,
+      mainEntity: person,
+      description: "A data profile of recorded roll-call positions extracted from official public minutes.",
+      isPartOf: { "@type": "CollectionPage", name: "San Francisco Supervisors", url: `${siteUrl}/supervisors` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Supervisors", item: `${siteUrl}/supervisors` },
+        { "@type": "ListItem", position: 2, name: profile.displayName, item: profileUrl },
+      ],
+    },
+  ];
   return (
     <div className="evidence-shell">
-      <header className="topbar">
-        <Link href="/" className="wordmark"><span className="prompt-mark">&gt;_</span> sfbos.info</Link>
-        <nav><Link href="/supervisors">SUPERVISORS</Link><Link href="/documents">PDFS</Link><Link href="/api">API</Link></nav>
-      </header>
+      <SiteHeader />
       <main className="evidence-main supervisor-profile">
         <nav className="evidence-breadcrumb"><Link href="/supervisors">Supervisors</Link><span>/</span><span>{profile.displayName}</span></nav>
         <header className="evidence-header">
@@ -105,7 +126,16 @@ export default async function SupervisorPage({ params }: Props) {
           <ol className="vote-evidence-list">
             {profile.votes.map((vote) => (
               <li key={vote.id}>
-                <div className="vote-evidence-meta"><time>{vote.meetingDate}</time><strong>{vote.position}</strong><span>{Math.round(vote.confidence * 100)}% extraction confidence</span></div>
+                <div className="vote-evidence-meta">
+                  <time>{vote.meetingDate}</time>
+                  <strong
+                    className={`vote-status vote-status-${vote.position.toLowerCase()}`}
+                    aria-label={`Recorded position: ${vote.position}`}
+                  >
+                    {vote.position}
+                  </strong>
+                  <span>{Math.round(vote.confidence * 100)}% extraction confidence</span>
+                </div>
                 <h3>File {vote.fileNumber}: {vote.title}</h3>
                 <p>{vote.action || "Action text unavailable."}</p>
                 <div><a href={vote.transcriptUrl}>HTML EVIDENCE</a><a href={vote.markdownUrl}>MARKDOWN</a><a href={vote.officialUrl} target="_blank" rel="noreferrer">OFFICIAL PDF</a></div>

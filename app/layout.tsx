@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "San Francisco Board of Supervisors Search",
     description:
       "Search San Francisco Board of Supervisors agendas, minutes, legislative files, and recorded votes.",

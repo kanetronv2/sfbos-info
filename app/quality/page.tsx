@@ -1,18 +1,29 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { getQualityReport } from "@/lib/quality";
 
-export const metadata: Metadata = { title: "Data quality", description: "Coverage, reconciliation, parser provenance, and ingestion health for the SF BOS public-record index." };
+export const metadata: Metadata = {
+  title: "SF BOS Search Data Quality and Coverage",
+  description: "Review document coverage, identifier reconciliation, extraction confidence, parser provenance, and ingestion health for the SF BOS public-record index.",
+  alternates: { canonical: "/quality" },
+  openGraph: {
+    type: "website",
+    url: "/quality",
+    title: "SF BOS Search Data Quality and Coverage",
+    description: "Public coverage and extraction-quality metrics for the SF BOS public-record index.",
+  },
+};
 export const revalidate = 300;
 
 export default async function QualityPage() {
   const report = await getQualityReport();
-  if (!report) return <main>Database is not configured.</main>;
+  if (!report) return <div className="docs-shell"><SiteHeader /><main>Database is not configured.</main></div>;
   const metrics = report.metrics;
-  return <div className="docs-shell"><header className="docs-header"><Link href="/" className="wordmark"><span className="prompt-mark">&gt;_</span> sfbos.info</Link><span>DATA QUALITY</span></header><main>
+  return <div className="docs-shell"><SiteHeader /><main>
     <p className="docs-kicker">OBSERVABLE PIPELINE</p><h1>Data quality</h1><p className="docs-lede">Coverage, identifier reconciliation, extraction confidence, parser versions, and recent ingestion status.</p>
     <section><h2>Coverage</h2><div className="quality-grid">
-      <Metric label="Documents" value={metrics.documents} /><Metric label="Without pages" value={metrics.documents_without_pages} bad={metrics.documents_without_pages > 0} />
+      <Metric label="Documents" value={metrics.documents} /><Metric label="Indexed documents" value={metrics.indexed_documents} />
+      <Metric label="Catalog only" value={metrics.catalog_only_documents} /><Metric label="Without pages" value={metrics.documents_without_pages} bad={metrics.documents_without_pages > 0} />
       <Metric label="Without versions" value={metrics.documents_without_versions} bad={metrics.documents_without_versions > 0} /><Metric label="Legislative items" value={metrics.legislative_items} />
       <Metric label="Recorded positions" value={metrics.recorded_positions} /><Metric label="Unresolved names" value={metrics.unresolved_positions} bad={metrics.unresolved_positions > 0} />
       <Metric label="Evidence spans" value={metrics.evidence_spans} /><Metric label="Low confidence" value={metrics.low_confidence_spans} bad={metrics.low_confidence_spans > 0} />

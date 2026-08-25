@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
 import { getDocumentEvidence } from "@/lib/documents";
 import { diffDocumentVersions, listDocumentVersions } from "@/lib/versions";
 
@@ -19,8 +20,9 @@ export default async function VersionPage({ params, searchParams }: Props) {
   const diff = Number.isInteger(from) && Number.isInteger(to) ? await diffDocumentVersions(id, from, to) : null;
   return (
     <div className="docs-shell">
-      <header className="docs-header"><Link href={document.transcriptPath} className="wordmark">← DOCUMENT</Link><span>VERSION HISTORY</span></header>
+      <SiteHeader />
       <main>
+        <Link href={document.transcriptPath} className="docs-kicker">← DOCUMENT</Link>
         <p className="docs-kicker">IMMUTABLE TEXT SNAPSHOTS</p>
         <h1>Versions</h1>
         <p className="docs-lede">{document.title}. Page hashes and extracted text are retained so source changes can be inspected.</p>

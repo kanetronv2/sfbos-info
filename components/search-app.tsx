@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { supervisorNames } from "@/lib/search-intent";
 import type { SearchResponse, SearchResult, SearchResultType } from "@/lib/types";
 
@@ -87,12 +87,9 @@ export function SearchApp() {
   }
 
   return <div className="site-shell">
-    <header className="topbar">
-      <Link href="/" className="wordmark" aria-label="SF BOS Search home" onClick={(event) => {
+    <SiteHeader onHomeClick={(event) => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; clearSearch();
-      }}><span className="prompt-mark" aria-hidden="true">&gt;_</span><span>sfbos.info</span></Link>
-      <nav aria-label="Primary navigation"><Link href="/documents">PDFS</Link><Link href="/supervisors">SUPERVISORS</Link><Link href="/api">API</Link><a href="/llms.txt">FOR MODELS</a></nav>
-    </header>
+      }} />
 
     <main className={`main-content ${response ? "has-results" : ""}`}>
       <section className="search-intro" aria-labelledby="page-title">

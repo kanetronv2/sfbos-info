@@ -12,7 +12,7 @@ export function SiteHeader({ onHomeClick }: { onHomeClick?: MouseEventHandler<HT
       </Link>
       <nav aria-label="Primary navigation">
         <Link href="/">SEARCH</Link>
-        <Link href="/documents">PDFS</Link>
+        <Link href="/documents">DOCUMENTS</Link>
         <Link href="/supervisors">SUPERVISORS</Link>
         <Link href="/api">API</Link>
         <a href="/llms.txt">FOR MODELS</a>
